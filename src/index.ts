@@ -1,20 +1,18 @@
 import { migrate } from 'drizzle-orm/node-postgres/migrator';
 import { Hono } from 'hono';
+import { logger } from 'hono/logger';
 import { client, db } from './drizzle/db';
+import { tripsRouter } from './routes';
 
 await client.connect();
-
 await migrate(db, { migrationsFolder: 'src/drizzle' });
 
-const app = new Hono();
+const router = new Hono();
+router.use(logger());
+router.route('/trips', tripsRouter);
 
-app.get('/', (c) => {
-  return c.text('Hello Hono!');
+router.get('/', (c) => {
+  return c.text('This is Norse Venture running on Bun!');
 });
 
-app.get('/trips', async (c) => {
-  const trips = await db.query.trip.findMany();
-  return c.json(trips);
-});
-
-export default app;
+export default router;
