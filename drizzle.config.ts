@@ -1,0 +1,17 @@
+import type { Config } from 'drizzle-kit';
+export default {
+  driver: 'pg',
+  out: './src/drizzle',
+  schema: './src/drizzle/schema.ts',
+  dbCredentials: {
+    host: process.env.POSTGRES_NAME!,
+    port: 5432,
+    user: process.env.POSTGRES_USER,
+    password: process.env.POSTGRES_PASSWORD,
+    database: process.env.POSTGRES_DB!,
+  },
+  // Print all statements
+  verbose: true,
+  // Always ask for confirmation
+  strict: true,
+} satisfies Config;
