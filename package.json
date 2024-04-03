@@ -1,7 +1,8 @@
 {
   "scripts": {
     "dev": "bun run --hot src/index.ts",
-    "generate": "drizzle-kit generate:pg"
+    "generate": "drizzle-kit generate:pg",
+    "push": "drizzle-kit push:pg"
   },
   "dependencies": {
     "drizzle-orm": "^0.30.6",

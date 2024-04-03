@@ -1,14 +1,14 @@
+import { relations } from 'drizzle-orm';
 import {
-	boolean,
-	index,
-	integer,
-	pgTable,
-	primaryKey,
-	serial,
-	text,
-	timestamp,
-	uniqueIndex,
-	varchar,
+  boolean,
+  integer,
+  pgTable,
+  primaryKey,
+  text,
+  timestamp,
+  uniqueIndex,
+  uuid,
+  varchar,
 } from 'drizzle-orm/pg-core';
 
 export const prismaMigrations = pgTable('_prisma_migrations', {
@@ -27,97 +27,25 @@ export const prismaMigrations = pgTable('_prisma_migrations', {
   appliedStepsCount: integer('applied_steps_count').default(0).notNull(),
 });
 
-export const task = pgTable('Task', {
-  id: serial('id').primaryKey().notNull(),
-  createdAt: timestamp('createdAt', { precision: 3, mode: 'string' })
-    .defaultNow()
-    .notNull(),
-  updatedAt: timestamp('updatedAt', { precision: 3, mode: 'string' }).notNull(),
-  title: text('title').notNull(),
-  value: boolean('value').default(false).notNull(),
-  description: text('description'),
-  date: timestamp('date', { precision: 3, mode: 'string' }),
-  tripId: integer('tripId')
-    .notNull()
-    .references(() => trip.id, { onDelete: 'cascade', onUpdate: 'cascade' }),
-  price: integer('price'),
-});
-
-export const trip = pgTable('Trip', {
-  id: serial('id').primaryKey().notNull(),
-  createdAt: timestamp('createdAt', { precision: 3, mode: 'string' })
-    .defaultNow()
-    .notNull(),
-  updatedAt: timestamp('updatedAt', { precision: 3, mode: 'string' }).notNull(),
-  title: text('title').notNull(),
-  background: text('background'),
-  date: timestamp('date', { precision: 3, mode: 'string' }).notNull(),
-  ownerId: integer('ownerId')
-    .notNull()
-    .references(() => user.id, { onDelete: 'cascade', onUpdate: 'cascade' }),
-  backgroundProvider: text('backgroundProvider'),
-});
-
-export const friendRequest = pgTable(
-  'FriendRequest',
+export const users = pgTable(
+  'users',
   {
-    id: serial('id').primaryKey().notNull(),
-    createdAt: timestamp('createdAt', { precision: 3, mode: 'string' })
+    id: uuid('id').primaryKey().notNull(),
+    created_at: timestamp('created_at', { withTimezone: true, mode: 'string' })
       .defaultNow()
       .notNull(),
-    updatedAt: timestamp('updatedAt', {
-      precision: 3,
-      mode: 'string',
+    email: varchar('email', {
+      length: 100,
     }).notNull(),
-    senderId: integer('senderId')
-      .notNull()
-      .references(() => user.id, { onDelete: 'cascade', onUpdate: 'cascade' }),
-    receiverId: integer('receiverId')
-      .notNull()
-      .references(() => user.id, { onDelete: 'cascade', onUpdate: 'cascade' }),
-  },
-  (table) => {
-    return {
-      senderIdReceiverIdKey: uniqueIndex(
-        'FriendRequest_senderId_receiverId_key',
-      ).on(table.senderId, table.receiverId),
-    };
-  },
-);
-
-export const friends = pgTable(
-  '_friends',
-  {
-    a: integer('A')
-      .notNull()
-      .references(() => user.id, { onDelete: 'cascade', onUpdate: 'cascade' }),
-    b: integer('B')
-      .notNull()
-      .references(() => user.id, { onDelete: 'cascade', onUpdate: 'cascade' }),
-  },
-  (table) => {
-    return {
-      abUnique: uniqueIndex('_friends_AB_unique').on(table.a, table.b),
-      bIdx: index().on(table.b),
-    };
-  },
-);
-
-export const user = pgTable(
-  'User',
-  {
-    id: serial('id').primaryKey().notNull(),
-    createdAt: timestamp('createdAt', { precision: 3, mode: 'string' })
-      .defaultNow()
-      .notNull(),
-    updatedAt: timestamp('updatedAt', {
-      precision: 3,
-      mode: 'string',
+    username: varchar('username', {
+      length: 255,
     }).notNull(),
-    email: text('email').notNull(),
-    username: text('username').notNull(),
-    refreshToken: text('refreshToken'),
-    profilePicture: text('profilePicture'),
+    refresh_token: varchar('refresh_token', {
+      length: 255,
+    }).notNull(),
+    profile_picture: varchar('profile_picture', {
+      length: 255,
+    }).notNull(),
   },
   (table) => {
     return {
@@ -127,22 +55,125 @@ export const user = pgTable(
   },
 );
 
-export const userInTrip = pgTable(
-  'UserInTrip',
+export const usersRelations = relations(users, ({ many }) => ({
+  trips: many(trips),
+  partecipating_trips: many(trip_partecipants),
+  friend_requests: many(friend_requests),
+}));
+
+export const trips = pgTable('trips', {
+  id: uuid('id').primaryKey().notNull(),
+  created_at: timestamp('created_at', { withTimezone: true, mode: 'string' })
+    .defaultNow()
+    .notNull(),
+  title: varchar('title', {
+    length: 255,
+  }).notNull(),
+  background: text('background'),
+  date: timestamp('date', { withTimezone: true, mode: 'string' }).notNull(),
+  owner_id: uuid('owner_id')
+    .notNull()
+    .references(() => users.id, { onDelete: 'cascade', onUpdate: 'cascade' }),
+  background_provider: varchar('background_provider', {
+    length: 255,
+  }).notNull(),
+});
+
+export const tripsRelations = relations(trips, ({ many, one }) => ({
+  owner: one(users, {
+    fields: [trips.owner_id],
+    references: [users.id],
+  }),
+  tasks: many(tasks),
+  partecipants: many(trip_partecipants),
+}));
+
+export const tasks = pgTable('tasks', {
+  id: uuid('id').primaryKey().notNull(),
+  created_at: timestamp('created_at', { withTimezone: true, mode: 'string' })
+    .defaultNow()
+    .notNull(),
+  title: varchar('title', {
+    length: 255,
+  }).notNull(),
+  value: boolean('value').default(false).notNull(),
+  description: text('description'),
+  date: timestamp('date', { withTimezone: true, mode: 'string' }),
+  trip_id: uuid('trip_id')
+    .notNull()
+    .references(() => trips.id, { onDelete: 'cascade', onUpdate: 'cascade' }),
+  price: integer('price'),
+});
+
+export const tasksRelations = relations(tasks, ({ one }) => ({
+  trip: one(trips, {
+    fields: [tasks.trip_id],
+    references: [trips.id],
+  }),
+}));
+
+export const trip_partecipants = pgTable(
+  'trip_partecipants',
   {
-    tripId: integer('tripId')
+    user_id: uuid('user_id')
       .notNull()
-      .references(() => trip.id, { onDelete: 'cascade', onUpdate: 'cascade' }),
-    userId: integer('userId')
+      .references(() => users.id),
+    trip_id: uuid('trip_id')
       .notNull()
-      .references(() => user.id, { onDelete: 'cascade', onUpdate: 'cascade' }),
+      .references(() => trips.id),
   },
-  (table) => {
-    return {
-      userInTripPkey: primaryKey({
-        columns: [table.tripId, table.userId],
-        name: 'UserInTrip_pkey',
-      }),
-    };
+  (t) => ({
+    pk: primaryKey({ columns: [t.trip_id, t.user_id] }),
+    user_trip_key: uniqueIndex('TripPartecipant_user_trip_key').on(
+      t.user_id,
+      t.trip_id,
+    ),
+  }),
+);
+
+export const trip_partecipants_relations = relations(
+  trip_partecipants,
+  ({ one }) => ({
+    trip: one(trips, {
+      fields: [trip_partecipants.trip_id],
+      references: [trips.id],
+    }),
+    user: one(users, {
+      fields: [trip_partecipants.user_id],
+      references: [users.id],
+    }),
+  }),
+);
+
+export const friend_requests = pgTable(
+  'friend_requests',
+  {
+    sender_id: uuid('sender_id')
+      .notNull()
+      .references(() => users.id),
+    receiver_id: uuid('receiver_id')
+      .notNull()
+      .references(() => users.id),
   },
+  (t) => ({
+    pk: primaryKey({ columns: [t.sender_id, t.receiver_id] }),
+    sender_receiver_key: uniqueIndex('FriendRequest_sender_receiver_key').on(
+      t.sender_id,
+      t.receiver_id,
+    ),
+  }),
+);
+
+export const friend_requests_relations = relations(
+  friend_requests,
+  ({ one }) => ({
+    receiver: one(users, {
+      fields: [friend_requests.receiver_id],
+      references: [users.id],
+    }),
+    sender: one(users, {
+      fields: [friend_requests.sender_id],
+      references: [users.id],
+    }),
+  }),
 );

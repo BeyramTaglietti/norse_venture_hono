@@ -1,149 +1,73 @@
 {
-  "id": "d4c0f0e3-55ed-4507-82ac-31f69f7b78ee",
+  "id": "6a156d89-9d1b-4c17-9ac0-6a729324ddab",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "5",
   "dialect": "pg",
   "tables": {
-    "FriendRequest": {
-      "name": "FriendRequest",
+    "friend_requests": {
+      "name": "friend_requests",
       "schema": "",
       "columns": {
-        "id": {
-          "name": "id",
-          "type": "serial",
-          "primaryKey": true,
-          "notNull": true
-        },
-        "createdAt": {
-          "name": "createdAt",
-          "type": "timestamp(3)",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        },
-        "updatedAt": {
-          "name": "updatedAt",
-          "type": "timestamp(3)",
+        "sender_id": {
+          "name": "sender_id",
+          "type": "uuid",
           "primaryKey": false,
           "notNull": true
         },
-        "senderId": {
-          "name": "senderId",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "receiverId": {
-          "name": "receiverId",
-          "type": "integer",
+        "receiver_id": {
+          "name": "receiver_id",
+          "type": "uuid",
           "primaryKey": false,
           "notNull": true
         }
       },
       "indexes": {
-        "FriendRequest_senderId_receiverId_key": {
-          "name": "FriendRequest_senderId_receiverId_key",
+        "FriendRequest_sender_receiver_key": {
+          "name": "FriendRequest_sender_receiver_key",
           "columns": [
-            "senderId",
-            "receiverId"
+            "sender_id",
+            "receiver_id"
           ],
           "isUnique": true
         }
       },
       "foreignKeys": {
-        "FriendRequest_senderId_User_id_fk": {
-          "name": "FriendRequest_senderId_User_id_fk",
-          "tableFrom": "FriendRequest",
-          "tableTo": "User",
+        "friend_requests_sender_id_users_id_fk": {
+          "name": "friend_requests_sender_id_users_id_fk",
+          "tableFrom": "friend_requests",
+          "tableTo": "users",
           "columnsFrom": [
-            "senderId"
+            "sender_id"
           ],
           "columnsTo": [
             "id"
           ],
-          "onDelete": "cascade",
-          "onUpdate": "cascade"
+          "onDelete": "no action",
+          "onUpdate": "no action"
         },
-        "FriendRequest_receiverId_User_id_fk": {
-          "name": "FriendRequest_receiverId_User_id_fk",
-          "tableFrom": "FriendRequest",
-          "tableTo": "User",
+        "friend_requests_receiver_id_users_id_fk": {
+          "name": "friend_requests_receiver_id_users_id_fk",
+          "tableFrom": "friend_requests",
+          "tableTo": "users",
           "columnsFrom": [
-            "receiverId"
+            "receiver_id"
           ],
           "columnsTo": [
             "id"
           ],
-          "onDelete": "cascade",
-          "onUpdate": "cascade"
+          "onDelete": "no action",
+          "onUpdate": "no action"
         }
       },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {}
-    },
-    "_friends": {
-      "name": "_friends",
-      "schema": "",
-      "columns": {
-        "A": {
-          "name": "A",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "B": {
-          "name": "B",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true
-        }
-      },
-      "indexes": {
-        "_friends_AB_unique": {
-          "name": "_friends_AB_unique",
+      "compositePrimaryKeys": {
+        "friend_requests_sender_id_receiver_id_pk": {
+          "name": "friend_requests_sender_id_receiver_id_pk",
           "columns": [
-            "A",
-            "B"
-          ],
-          "isUnique": true
-        },
-        "_friends_B_index": {
-          "name": "_friends_B_index",
-          "columns": [
-            "B"
-          ],
-          "isUnique": false
+            "sender_id",
+            "receiver_id"
+          ]
         }
       },
-      "foreignKeys": {
-        "_friends_A_User_id_fk": {
-          "name": "_friends_A_User_id_fk",
-          "tableFrom": "_friends",
-          "tableTo": "User",
-          "columnsFrom": [
-            "A"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "cascade"
-        },
-        "_friends_B_User_id_fk": {
-          "name": "_friends_B_User_id_fk",
-          "tableFrom": "_friends",
-          "tableTo": "User",
-          "columnsFrom": [
-            "B"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "cascade"
-        }
-      },
-      "compositePrimaryKeys": {},
       "uniqueConstraints": {}
     },
     "_prisma_migrations": {
@@ -206,32 +130,26 @@
       "compositePrimaryKeys": {},
       "uniqueConstraints": {}
     },
-    "Task": {
-      "name": "Task",
+    "tasks": {
+      "name": "tasks",
       "schema": "",
       "columns": {
         "id": {
           "name": "id",
-          "type": "serial",
+          "type": "uuid",
           "primaryKey": true,
           "notNull": true
         },
-        "createdAt": {
-          "name": "createdAt",
-          "type": "timestamp(3)",
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
           "primaryKey": false,
           "notNull": true,
           "default": "now()"
         },
-        "updatedAt": {
-          "name": "updatedAt",
-          "type": "timestamp(3)",
-          "primaryKey": false,
-          "notNull": true
-        },
         "title": {
           "name": "title",
-          "type": "text",
+          "type": "varchar(255)",
           "primaryKey": false,
           "notNull": true
         },
@@ -250,13 +168,13 @@
         },
         "date": {
           "name": "date",
-          "type": "timestamp(3)",
+          "type": "timestamp with time zone",
           "primaryKey": false,
           "notNull": false
         },
-        "tripId": {
-          "name": "tripId",
-          "type": "integer",
+        "trip_id": {
+          "name": "trip_id",
+          "type": "uuid",
           "primaryKey": false,
           "notNull": true
         },
@@ -269,12 +187,12 @@
       },
       "indexes": {},
       "foreignKeys": {
-        "Task_tripId_Trip_id_fk": {
-          "name": "Task_tripId_Trip_id_fk",
-          "tableFrom": "Task",
-          "tableTo": "Trip",
+        "tasks_trip_id_trips_id_fk": {
+          "name": "tasks_trip_id_trips_id_fk",
+          "tableFrom": "tasks",
+          "tableTo": "trips",
           "columnsFrom": [
-            "tripId"
+            "trip_id"
           ],
           "columnsTo": [
             "id"
@@ -286,32 +204,92 @@
       "compositePrimaryKeys": {},
       "uniqueConstraints": {}
     },
-    "Trip": {
-      "name": "Trip",
+    "trip_partecipants": {
+      "name": "trip_partecipants",
+      "schema": "",
+      "columns": {
+        "user_id": {
+          "name": "user_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "trip_id": {
+          "name": "trip_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {
+        "TripPartecipant_user_trip_key": {
+          "name": "TripPartecipant_user_trip_key",
+          "columns": [
+            "user_id",
+            "trip_id"
+          ],
+          "isUnique": true
+        }
+      },
+      "foreignKeys": {
+        "trip_partecipants_user_id_users_id_fk": {
+          "name": "trip_partecipants_user_id_users_id_fk",
+          "tableFrom": "trip_partecipants",
+          "tableTo": "users",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "trip_partecipants_trip_id_trips_id_fk": {
+          "name": "trip_partecipants_trip_id_trips_id_fk",
+          "tableFrom": "trip_partecipants",
+          "tableTo": "trips",
+          "columnsFrom": [
+            "trip_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "trip_partecipants_trip_id_user_id_pk": {
+          "name": "trip_partecipants_trip_id_user_id_pk",
+          "columns": [
+            "trip_id",
+            "user_id"
+          ]
+        }
+      },
+      "uniqueConstraints": {}
+    },
+    "trips": {
+      "name": "trips",
       "schema": "",
       "columns": {
         "id": {
           "name": "id",
-          "type": "serial",
+          "type": "uuid",
           "primaryKey": true,
           "notNull": true
         },
-        "createdAt": {
-          "name": "createdAt",
-          "type": "timestamp(3)",
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
           "primaryKey": false,
           "notNull": true,
           "default": "now()"
         },
-        "updatedAt": {
-          "name": "updatedAt",
-          "type": "timestamp(3)",
-          "primaryKey": false,
-          "notNull": true
-        },
         "title": {
           "name": "title",
-          "type": "text",
+          "type": "varchar(255)",
           "primaryKey": false,
           "notNull": true
         },
@@ -323,31 +301,31 @@
         },
         "date": {
           "name": "date",
-          "type": "timestamp(3)",
+          "type": "timestamp with time zone",
           "primaryKey": false,
           "notNull": true
         },
-        "ownerId": {
-          "name": "ownerId",
-          "type": "integer",
+        "owner_id": {
+          "name": "owner_id",
+          "type": "uuid",
           "primaryKey": false,
           "notNull": true
         },
-        "backgroundProvider": {
-          "name": "backgroundProvider",
-          "type": "text",
+        "background_provider": {
+          "name": "background_provider",
+          "type": "varchar(255)",
           "primaryKey": false,
-          "notNull": false
+          "notNull": true
         }
       },
       "indexes": {},
       "foreignKeys": {
-        "Trip_ownerId_User_id_fk": {
-          "name": "Trip_ownerId_User_id_fk",
-          "tableFrom": "Trip",
-          "tableTo": "User",
+        "trips_owner_id_users_id_fk": {
+          "name": "trips_owner_id_users_id_fk",
+          "tableFrom": "trips",
+          "tableTo": "users",
           "columnsFrom": [
-            "ownerId"
+            "owner_id"
           ],
           "columnsTo": [
             "id"
@@ -359,52 +337,46 @@
       "compositePrimaryKeys": {},
       "uniqueConstraints": {}
     },
-    "User": {
-      "name": "User",
+    "users": {
+      "name": "users",
       "schema": "",
       "columns": {
         "id": {
           "name": "id",
-          "type": "serial",
+          "type": "uuid",
           "primaryKey": true,
           "notNull": true
         },
-        "createdAt": {
-          "name": "createdAt",
-          "type": "timestamp(3)",
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
           "primaryKey": false,
           "notNull": true,
           "default": "now()"
         },
-        "updatedAt": {
-          "name": "updatedAt",
-          "type": "timestamp(3)",
-          "primaryKey": false,
-          "notNull": true
-        },
         "email": {
           "name": "email",
-          "type": "text",
+          "type": "varchar(100)",
           "primaryKey": false,
           "notNull": true
         },
         "username": {
           "name": "username",
-          "type": "text",
+          "type": "varchar(255)",
           "primaryKey": false,
           "notNull": true
         },
-        "refreshToken": {
-          "name": "refreshToken",
-          "type": "text",
+        "refresh_token": {
+          "name": "refresh_token",
+          "type": "varchar(255)",
           "primaryKey": false,
-          "notNull": false
+          "notNull": true
         },
-        "profilePicture": {
-          "name": "profilePicture",
-          "type": "text",
+        "profile_picture": {
+          "name": "profile_picture",
+          "type": "varchar(255)",
           "primaryKey": false,
-          "notNull": false
+          "notNull": true
         }
       },
       "indexes": {
@@ -425,63 +397,6 @@
       },
       "foreignKeys": {},
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {}
-    },
-    "UserInTrip": {
-      "name": "UserInTrip",
-      "schema": "",
-      "columns": {
-        "tripId": {
-          "name": "tripId",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "userId": {
-          "name": "userId",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true
-        }
-      },
-      "indexes": {},
-      "foreignKeys": {
-        "UserInTrip_tripId_Trip_id_fk": {
-          "name": "UserInTrip_tripId_Trip_id_fk",
-          "tableFrom": "UserInTrip",
-          "tableTo": "Trip",
-          "columnsFrom": [
-            "tripId"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "cascade"
-        },
-        "UserInTrip_userId_User_id_fk": {
-          "name": "UserInTrip_userId_User_id_fk",
-          "tableFrom": "UserInTrip",
-          "tableTo": "User",
-          "columnsFrom": [
-            "userId"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "cascade"
-        }
-      },
-      "compositePrimaryKeys": {
-        "UserInTrip_pkey": {
-          "name": "UserInTrip_pkey",
-          "columns": [
-            "tripId",
-            "userId"
-          ]
-        }
-      },
       "uniqueConstraints": {}
     }
   },
