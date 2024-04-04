@@ -66,7 +66,8 @@ const register = async (email: string, picture?: string) => {
     .values({
       email,
       username,
-      profile_picture: picture,
+      profile_picture: picture || '',
+      refresh_token: '',
     })
     .returning();
 

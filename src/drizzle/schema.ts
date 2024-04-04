@@ -30,7 +30,7 @@ export const prismaMigrations = pgTable('_prisma_migrations', {
 export const users = pgTable(
   'users',
   {
-    id: uuid('id').primaryKey().notNull(),
+    id: uuid('id').primaryKey().notNull().defaultRandom(),
     created_at: timestamp('created_at', { withTimezone: true, mode: 'string' })
       .defaultNow()
       .notNull(),
@@ -62,7 +62,7 @@ export const usersRelations = relations(users, ({ many }) => ({
 }));
 
 export const trips = pgTable('trips', {
-  id: uuid('id').primaryKey().notNull(),
+  id: uuid('id').primaryKey().notNull().defaultRandom(),
   created_at: timestamp('created_at', { withTimezone: true, mode: 'string' })
     .defaultNow()
     .notNull(),
@@ -70,13 +70,13 @@ export const trips = pgTable('trips', {
     length: 255,
   }).notNull(),
   background: text('background'),
-  date: timestamp('date', { withTimezone: true, mode: 'string' }).notNull(),
+  date: timestamp('date', { withTimezone: true }).notNull(),
   owner_id: uuid('owner_id')
     .notNull()
     .references(() => users.id, { onDelete: 'cascade', onUpdate: 'cascade' }),
   background_provider: varchar('background_provider', {
     length: 255,
-  }).notNull(),
+  }),
 });
 
 export const tripsRelations = relations(trips, ({ many, one }) => ({
@@ -89,7 +89,7 @@ export const tripsRelations = relations(trips, ({ many, one }) => ({
 }));
 
 export const tasks = pgTable('tasks', {
-  id: uuid('id').primaryKey().notNull(),
+  id: uuid('id').primaryKey().notNull().defaultRandom(),
   created_at: timestamp('created_at', { withTimezone: true, mode: 'string' })
     .defaultNow()
     .notNull(),
@@ -124,10 +124,6 @@ export const trip_partecipants = pgTable(
   },
   (t) => ({
     pk: primaryKey({ columns: [t.trip_id, t.user_id] }),
-    user_trip_key: uniqueIndex('TripPartecipant_user_trip_key').on(
-      t.user_id,
-      t.trip_id,
-    ),
   }),
 );
 
@@ -157,10 +153,6 @@ export const friend_requests = pgTable(
   },
   (t) => ({
     pk: primaryKey({ columns: [t.sender_id, t.receiver_id] }),
-    sender_receiver_key: uniqueIndex('FriendRequest_sender_receiver_key').on(
-      t.sender_id,
-      t.receiver_id,
-    ),
   }),
 );
 
