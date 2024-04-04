@@ -7,7 +7,8 @@ import { authRouter, tripsRouter, unsplashRouter } from './routes';
 await client.connect();
 
 const router = new Hono(); // .basePath('/v1')
-router.use(logger());
+
+if (Bun.env.NODE_ENV === 'development') router.use(logger());
 
 router.route('v1/trips', tripsRouter);
 router.route('v1/auth', authRouter);

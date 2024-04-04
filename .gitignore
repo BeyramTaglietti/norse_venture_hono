@@ -1,2 +1,6 @@
-node_modules
-.env
+# compiled output
+/build
+/node_modules
+
+# ENV
+.env*
