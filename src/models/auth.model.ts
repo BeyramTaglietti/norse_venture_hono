@@ -1,7 +1,7 @@
-import { user } from '@/drizzle/schema';
+import { users } from '@/drizzle/schema';
 
 export type LoginResponse = {
   access_token: string;
   refresh_token: string;
-  user: typeof user.$inferSelect;
+  user: typeof users.$inferSelect;
 };

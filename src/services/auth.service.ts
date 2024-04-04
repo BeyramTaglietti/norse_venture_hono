@@ -4,14 +4,64 @@ import { users } from '@/drizzle/schema';
 import { LoginResponse } from '@/models';
 import { eq } from 'drizzle-orm';
 import { OAuth2Client } from 'google-auth-library';
-import { sign } from 'hono/jwt';
+import { sign, verify } from 'hono/jwt';
+import verifyAppleToken from 'verify-apple-id-token';
 
-export const googleLogin = async (token: string) => {
+export const googleLogin = async (token: string): Promise<LoginResponse> => {
   const payload = await verifyGoogleToken(token);
 
   const { email, picture } = payload;
 
   return await login({ userEmail: email!, userPicture: picture });
+};
+
+export const appleLogin = async (token: string): Promise<LoginResponse> => {
+  const payload = await verifyAppleToken({
+    idToken: token,
+    clientId: Bun.env.APPLE_CLIENT_ID!,
+  });
+
+  return await login({
+    userEmail: payload.email!,
+    userPicture: '',
+  });
+};
+
+export const refreshToken = async (currentRefreshToken: string) => {
+  try {
+    const payload = await verify(
+      currentRefreshToken,
+      Bun.env.JWT_REFRESH_SECRET!,
+    );
+
+    const user = await db.query.users.findFirst({
+      where: eq(users.id, payload.sub),
+    });
+
+    if (!user || !user.refresh_token)
+      throw new CustomError('Invalid operation', HttpErrors.UNAUTHORIZED);
+
+    const tokenIsValid = await Bun.password.verify(
+      currentRefreshToken,
+      user.refresh_token,
+    );
+
+    if (!tokenIsValid)
+      throw new CustomError('Invalid token', HttpErrors.UNAUTHORIZED);
+
+    const access_token = await generateJwtToken(user.id, 'access');
+    const refresh_token = await generateJwtToken(user.id, 'refresh');
+
+    const updatedUser = await updateRefreshToken(user.id, refresh_token);
+
+    return {
+      access_token,
+      refresh_token,
+      user: updatedUser[0],
+    };
+  } catch (e) {
+    throw new CustomError('Invalid token', HttpErrors.UNAUTHORIZED);
+  }
 };
 
 const login = async ({
@@ -31,7 +81,7 @@ const login = async ({
     const access_token = await generateJwtToken(String(user.id), 'access');
     const refresh_token = await generateJwtToken(String(user.id), 'refresh');
 
-    updateRefreshToken(user.id, refresh_token);
+    await updateRefreshToken(user.id, refresh_token);
 
     return {
       access_token,
@@ -48,7 +98,7 @@ const login = async ({
       'refresh',
     );
 
-    updateRefreshToken(userExists.id, refresh_token);
+    await updateRefreshToken(userExists.id, refresh_token);
 
     return {
       access_token,
