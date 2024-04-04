@@ -4,9 +4,9 @@
   "private": true,
   "license": "UNLICENSED",
   "scripts": {
-    "dev": "bun run --hot src/index.ts",
+    "dev": "NODE_ENV=development bun run --hot src/index.ts",
     "build": "bun build --entrypoints ./src/index.ts --outdir ./build --target bun",
-    "start": "bun build/index.js",
+    "start": "NODE_ENV=production bun build/index.js",
     "db:generate": "drizzle-kit generate:pg",
     "db:push": "drizzle-kit push:pg",
     "db:migrate": "bun run src/drizzle/migrate.ts",
