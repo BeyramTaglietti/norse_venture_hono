@@ -1,6 +1,7 @@
 /* eslint-disable drizzle/enforce-delete-with-where */
 import { throwCustomError } from '@/config/errors';
 import {
+  addPartecipant,
   createTask,
   createTrip,
   deleteTask,
@@ -11,6 +12,7 @@ import {
   getTrip,
   getTrips,
   putTask,
+  removePartecipant,
 } from '@/services';
 import {
   CreateTripSchema,
@@ -97,6 +99,38 @@ tripsRouter.get('/:trip_id/partecipants', async (c) => {
     const tripId = c.req.param('trip_id');
     const partecipants = await getPartecipants(tripId, payload.sub);
     return c.json(partecipants);
+  } catch (error) {
+    return throwCustomError(error, c);
+  }
+});
+
+tripsRouter.post('/:trip_id/partecipants/:partecipant_id', async (c) => {
+  try {
+    const payload = c.get('jwtPayload');
+    const tripId = c.req.param('trip_id');
+    const partecipantId = c.req.param('partecipant_id');
+    const partecipant = await addPartecipant(
+      tripId,
+      payload.sub,
+      partecipantId,
+    );
+    return c.json(partecipant);
+  } catch (error) {
+    return throwCustomError(error, c);
+  }
+});
+
+tripsRouter.delete('/:trip_id/partecipants/:partecipant_id', async (c) => {
+  try {
+    const payload = c.get('jwtPayload');
+    const tripId = c.req.param('trip_id');
+    const partecipantId = c.req.param('partecipant_id');
+    const partecipant = await removePartecipant(
+      tripId,
+      payload.sub,
+      partecipantId,
+    );
+    return c.json(partecipant);
   } catch (error) {
     return throwCustomError(error, c);
   }

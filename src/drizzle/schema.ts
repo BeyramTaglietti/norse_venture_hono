@@ -59,6 +59,7 @@ export const usersRelations = relations(users, ({ many }) => ({
   trips: many(trips),
   partecipating_trips: many(trip_partecipants),
   friend_requests: many(friend_requests),
+  friends: many(friends),
 }));
 
 export const trips = pgTable('trips', {
@@ -167,5 +168,20 @@ export const friend_requests_relations = relations(
       fields: [friend_requests.sender_id],
       references: [users.id],
     }),
+  }),
+);
+
+export const friends = pgTable(
+  'friends',
+  {
+    user_id: uuid('user_id')
+      .notNull()
+      .references(() => users.id),
+    friend_id: uuid('friend_id')
+      .notNull()
+      .references(() => users.id),
+  },
+  (t) => ({
+    pk: primaryKey({ columns: [t.user_id, t.friend_id] }),
   }),
 );
