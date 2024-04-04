@@ -31,7 +31,7 @@ export const users = pgTable(
   'users',
   {
     id: uuid('id').primaryKey().notNull().defaultRandom(),
-    created_at: timestamp('created_at', { withTimezone: true, mode: 'string' })
+    created_at: timestamp('created_at', { withTimezone: true })
       .defaultNow()
       .notNull(),
     email: varchar('email', {
@@ -63,7 +63,7 @@ export const usersRelations = relations(users, ({ many }) => ({
 
 export const trips = pgTable('trips', {
   id: uuid('id').primaryKey().notNull().defaultRandom(),
-  created_at: timestamp('created_at', { withTimezone: true, mode: 'string' })
+  created_at: timestamp('created_at', { withTimezone: true })
     .defaultNow()
     .notNull(),
   title: varchar('title', {
@@ -90,7 +90,7 @@ export const tripsRelations = relations(trips, ({ many, one }) => ({
 
 export const tasks = pgTable('tasks', {
   id: uuid('id').primaryKey().notNull().defaultRandom(),
-  created_at: timestamp('created_at', { withTimezone: true, mode: 'string' })
+  created_at: timestamp('created_at', { withTimezone: true })
     .defaultNow()
     .notNull(),
   title: varchar('title', {
@@ -98,7 +98,7 @@ export const tasks = pgTable('tasks', {
   }).notNull(),
   value: boolean('value').default(false).notNull(),
   description: text('description'),
-  date: timestamp('date', { withTimezone: true, mode: 'string' }),
+  date: timestamp('date', { withTimezone: true }),
   trip_id: uuid('trip_id')
     .notNull()
     .references(() => trips.id, { onDelete: 'cascade', onUpdate: 'cascade' }),
