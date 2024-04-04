@@ -1,8 +1,11 @@
+/* eslint-disable drizzle/enforce-delete-with-where */
 import { throwCustomError } from '@/config/errors';
 import {
   createTask,
   createTrip,
   deleteTask,
+  deleteTrip,
+  editTrip,
   getPartecipants,
   getTasks,
   getTrip,
@@ -58,6 +61,33 @@ tripsRouter.post('/', zValidator('json', CreateTripSchema), async (c) => {
     return throwCustomError(error, c);
   }
 });
+
+tripsRouter.delete('/:trip_id', async (c) => {
+  try {
+    const payload = c.get('jwtPayload');
+    const tripId = c.req.param('trip_id');
+    const deletedTrip = await deleteTrip(tripId, payload.sub);
+    return c.json(deletedTrip);
+  } catch (error) {
+    return throwCustomError(error, c);
+  }
+});
+
+tripsRouter.put(
+  '/:trip_id',
+  zValidator('json', CreateTripSchema),
+  async (c) => {
+    try {
+      const payload = c.get('jwtPayload');
+      const tripId = c.req.param('trip_id');
+      const trip = c.req.valid('json');
+      const updatedTrip = await editTrip(tripId, trip, payload.sub);
+      return c.json(updatedTrip);
+    } catch (error) {
+      return throwCustomError(error, c);
+    }
+  },
+);
 
 /// Partecipants
 
@@ -118,14 +148,13 @@ tripsRouter.put(
   },
 );
 
-// eslint-disable-next-line drizzle/enforce-delete-with-where
 tripsRouter.delete('/:trip_id/tasks/:task_id', async (c) => {
   try {
     const payload = c.get('jwtPayload');
     const tripId = c.req.param('trip_id');
     const taskId = c.req.param('task_id');
-    await deleteTask(tripId, taskId, payload.sub);
-    return c.json({ message: 'Task deleted' });
+    const deletedTask = deleteTask(tripId, taskId, payload.sub);
+    return c.json(deletedTask);
   } catch (error) {
     return throwCustomError(error, c);
   }

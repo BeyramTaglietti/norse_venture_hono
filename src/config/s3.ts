@@ -12,7 +12,7 @@ const accessKey = process.env.BUCKET_ACCESS_KEY!;
 const secretKey = process.env.BUCKET_SECRET_KEY!;
 const bucketName = process.env.BUCKET_NAME!;
 
-const s3Client = new S3Client({
+export const s3Client = new S3Client({
   credentials: {
     accessKeyId: accessKey,
     secretAccessKey: secretKey,
@@ -21,7 +21,7 @@ const s3Client = new S3Client({
 });
 
 export async function resizeThumbnail(
-  file: Express.Multer.File,
+  file: File,
   sizeLimitKb: number,
   quality = 80,
 ): Promise<sharp.Sharp> {
@@ -29,7 +29,9 @@ export async function resizeThumbnail(
   let compressedSize: number;
   let qualityValue = quality;
 
-  compressedImage = sharp(file.buffer)
+  const buffer = await file.arrayBuffer();
+
+  compressedImage = sharp(buffer)
     .resize({
       width: 500,
       height: 500,
