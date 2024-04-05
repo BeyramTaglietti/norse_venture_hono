@@ -185,3 +185,14 @@ export const friends = pgTable(
     pk: primaryKey({ columns: [t.user_id, t.friend_id] }),
   }),
 );
+
+export const friends_relations = relations(friends, ({ one }) => ({
+  friend: one(users, {
+    fields: [friends.friend_id],
+    references: [users.id],
+  }),
+  user: one(users, {
+    fields: [friends.user_id],
+    references: [users.id],
+  }),
+}));
