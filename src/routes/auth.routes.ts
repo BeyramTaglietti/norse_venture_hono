@@ -8,13 +8,13 @@ const authRouter = new Hono();
 authRouter.post('/google_login', zValidator('json', LoginSchema), async (c) => {
   const { token } = c.req.valid('json');
   const res = await googleLogin(token);
-  return c.json(res);
+  return c.json(res, 200);
 });
 
 authRouter.post('/apple_login', zValidator('json', LoginSchema), async (c) => {
   const { token } = c.req.valid('json');
   const res = await appleLogin(token);
-  return c.json(res);
+  return c.json(res, 200);
 });
 
 authRouter.post(
@@ -23,7 +23,7 @@ authRouter.post(
   async (c) => {
     const { refresh_token } = c.req.valid('json');
     const res = await refreshToken(refresh_token);
-    return c.json(res);
+    return c.json(res, 200);
   },
 );
 

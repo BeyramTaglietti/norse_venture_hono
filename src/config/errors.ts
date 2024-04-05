@@ -26,7 +26,7 @@ export const throwCustomError = (
   c: Context,
 ) => {
   if (error instanceof CustomError) {
-    return c.json({ message: error.message }, error.status);
+    return c.json({ message: error }, error.status);
   } else if (error instanceof Error) {
     return c.json({ message: error.message }, 500);
   }

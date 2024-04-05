@@ -1,5 +1,10 @@
 import { CustomError } from '@/config/errors';
-import { getSignedImageUrl, s3Client } from '@/config/s3';
+import {
+  getSignedImageUrl,
+  resizeThumbnail,
+  s3Client,
+  uploadToS3,
+} from '@/config/s3';
 import { db } from '@/drizzle/db';
 import { trip_partecipants, trips } from '@/drizzle/schema';
 import { ImageProvider } from '@/models';
@@ -144,6 +149,40 @@ export const editTrip = async (
   } catch (e) {
     throw new CustomError('Error while updating trip', 500);
   }
+};
+
+export const updateThumbnail = async (
+  tripId: string,
+  userId: string,
+  thumbnail: File,
+): Promise<string> => {
+  const trip = await db.query.trips.findFirst({
+    where: eq(trips.id, tripId).append(eq(trips.owner_id, userId)),
+  });
+
+  if (!trip) throw new CustomError('Trip not found', 404);
+
+  const resizedImage = await resizeThumbnail(thumbnail, 500);
+  const resizedBuffer = await resizedImage.toBuffer();
+
+  const thumbnailUrl = await uploadToS3({
+    folder: 'trip_thumbnails',
+    fileName: `trip-${tripId}-thumbnail`,
+    resizedBuffer,
+    resizedImage,
+  }).catch((e) => {
+    throw new CustomError(e, 500);
+  });
+
+  await db
+    .update(trips)
+    .set({
+      background: thumbnailUrl,
+      background_provider: ImageProvider.S3,
+    })
+    .where(eq(trips.id, tripId));
+
+  return getTripThumbnail(tripId);
 };
 
 const getTripThumbnail = async (tripId: string): Promise<string> => {

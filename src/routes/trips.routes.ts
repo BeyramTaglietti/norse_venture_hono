@@ -1,5 +1,6 @@
 /* eslint-disable drizzle/enforce-delete-with-where */
 import { throwCustomError } from '@/config/errors';
+import { getFileFromBody } from '@/helpers';
 import {
   addPartecipant,
   createTask,
@@ -13,6 +14,7 @@ import {
   getTrips,
   putTask,
   removePartecipant,
+  updateThumbnail,
 } from '@/services';
 import {
   CreateTripSchema,
@@ -58,7 +60,7 @@ tripsRouter.post('/', zValidator('json', CreateTripSchema), async (c) => {
     const payload = c.get('jwtPayload');
     const trip = c.req.valid('json');
     const createdTrip = await createTrip(trip, payload.sub);
-    return c.json(createdTrip);
+    return c.json(createdTrip, 201);
   } catch (error) {
     return throwCustomError(error, c);
   }
@@ -69,7 +71,7 @@ tripsRouter.delete('/:trip_id', async (c) => {
     const payload = c.get('jwtPayload');
     const tripId = c.req.param('trip_id');
     const deletedTrip = await deleteTrip(tripId, payload.sub);
-    return c.json(deletedTrip);
+    return c.json(deletedTrip, 204);
   } catch (error) {
     return throwCustomError(error, c);
   }
@@ -84,12 +86,26 @@ tripsRouter.put(
       const tripId = c.req.param('trip_id');
       const trip = c.req.valid('json');
       const updatedTrip = await editTrip(tripId, trip, payload.sub);
-      return c.json(updatedTrip);
+      return c.json(updatedTrip, 200);
     } catch (error) {
       return throwCustomError(error, c);
     }
   },
 );
+
+tripsRouter.post('/:trip_id/thumbnail', async (c) => {
+  try {
+    const payload = c.get('jwtPayload');
+    const tripId = c.req.param('trip_id');
+
+    const file = await getFileFromBody(c);
+
+    const updatedTrip = await updateThumbnail(tripId, payload.sub, file);
+    return c.json(updatedTrip, 200);
+  } catch (error) {
+    return throwCustomError(error, c);
+  }
+});
 
 /// Partecipants
 
@@ -114,7 +130,7 @@ tripsRouter.post('/:trip_id/partecipants/:partecipant_id', async (c) => {
       payload.sub,
       partecipantId,
     );
-    return c.json(partecipant);
+    return c.json(partecipant, 201);
   } catch (error) {
     return throwCustomError(error, c);
   }
@@ -130,7 +146,7 @@ tripsRouter.delete('/:trip_id/partecipants/:partecipant_id', async (c) => {
       payload.sub,
       partecipantId,
     );
-    return c.json(partecipant);
+    return c.json(partecipant, 204);
   } catch (error) {
     return throwCustomError(error, c);
   }
@@ -158,7 +174,7 @@ tripsRouter.post(
       const tripId = c.req.param('trip_id');
       const task = c.req.valid('json');
       const createdTask = await createTask(tripId, payload.sub, task);
-      return c.json(createdTask);
+      return c.json(createdTask, 201);
     } catch (error) {
       return throwCustomError(error, c);
     }
@@ -175,7 +191,7 @@ tripsRouter.put(
       const taskId = c.req.param('task_id');
       const task = c.req.valid('json');
       const updatedTask = await putTask(tripId, taskId, payload.sub, task);
-      return c.json(updatedTask);
+      return c.json(updatedTask, 200);
     } catch (error) {
       return throwCustomError(error, c);
     }
@@ -188,7 +204,7 @@ tripsRouter.delete('/:trip_id/tasks/:task_id', async (c) => {
     const tripId = c.req.param('trip_id');
     const taskId = c.req.param('task_id');
     const deletedTask = deleteTask(tripId, taskId, payload.sub);
-    return c.json(deletedTask);
+    return c.json(deletedTask, 204);
   } catch (error) {
     return throwCustomError(error, c);
   }

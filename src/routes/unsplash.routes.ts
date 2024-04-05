@@ -18,7 +18,7 @@ unsplashRouter.get('/', async (c) => {
   try {
     const keyword = c.req.query('keyword') ?? '';
     const images = await getImages(keyword);
-    return c.json(images);
+    return c.json(images, 200);
   } catch (error) {
     return throwCustomError(error, c);
   }
@@ -36,7 +36,7 @@ unsplashRouter.post(
     try {
       const body = c.req.valid('json');
       const images = await getImages(body.url);
-      return c.json(images);
+      return c.json(images, 200);
     } catch (error) {
       return throwCustomError(error, c);
     }

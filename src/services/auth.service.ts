@@ -2,7 +2,7 @@ import { CustomError, HttpErrors } from '@/config/errors';
 import { db } from '@/drizzle/db';
 import { users } from '@/drizzle/schema';
 import { LoginResponse } from '@/models';
-import { eq } from 'drizzle-orm';
+import { InferSelectModel, eq } from 'drizzle-orm';
 import { OAuth2Client } from 'google-auth-library';
 import { sign, verify } from 'hono/jwt';
 import verifyAppleToken from 'verify-apple-id-token';
@@ -108,7 +108,10 @@ const login = async ({
   }
 };
 
-const register = async (email: string, picture?: string) => {
+const register = async (
+  email: string,
+  picture?: string,
+): Promise<InferSelectModel<typeof users>> => {
   const username = await getRandomUsername();
 
   const newUser = await db
