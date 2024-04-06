@@ -190,7 +190,7 @@ tripsRouter.put(
       const tripId = c.req.param('trip_id');
       const taskId = c.req.param('task_id');
       const task = c.req.valid('json');
-      const updatedTask = await putTask(tripId, taskId, payload.sub, task);
+      const updatedTask = await putTask(tripId, payload.sub, taskId, task);
       return c.json(updatedTask, 200);
     } catch (error) {
       return throwCustomError(error, c);
@@ -203,7 +203,7 @@ tripsRouter.delete('/:trip_id/tasks/:task_id', async (c) => {
     const payload = c.get('jwtPayload');
     const tripId = c.req.param('trip_id');
     const taskId = c.req.param('task_id');
-    const deletedTask = deleteTask(tripId, taskId, payload.sub);
+    const deletedTask = deleteTask(tripId, payload.sub, taskId);
     return c.json(deletedTask, 200);
   } catch (error) {
     return throwCustomError(error, c);

@@ -12,8 +12,6 @@ export const getUsersByUsername = async (
     where: ilike(users.username, `%${username}%`),
   });
 
-  console.log(usersFound, userId, username);
-
   return usersFound.filter((user) => user.id !== userId)[0];
 };
 
@@ -54,8 +52,15 @@ export const usernameAvailable = async (username: string): Promise<boolean> => {
   return !user;
 };
 
-export const deleteAccount = async (userId: string): Promise<void> => {
-  await db.delete(users).where(eq(users.id, userId));
+export const deleteAccount = async (
+  userId: string,
+): Promise<InferSelectModel<typeof users>> => {
+  const deletedUser = await db
+    .delete(users)
+    .where(eq(users.id, userId))
+    .returning();
+
+  return deletedUser[0];
 };
 
 export const setProfilePicture = async (

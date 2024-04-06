@@ -33,8 +33,6 @@ usersRouter.get('/', async (c) => {
     const payload = c.get('jwtPayload');
     const usersFound = await getUsersByUsername(username, payload.sub);
 
-    console.log(usersFound);
-
     return c.json(usersFound, 200);
   } catch (e) {
     return throwCustomError(e, c);
@@ -71,18 +69,6 @@ usersRouter.get('/username_available', async (c) => {
     if (!res.success) return c.json(res, 400);
 
     return c.text(String(await usernameAvailable(username)));
-  } catch (e) {
-    return throwCustomError(e, c);
-  }
-});
-
-usersRouter.delete('/', async (c) => {
-  try {
-    const payload = c.get('jwtPayload');
-
-    await deleteAccount(payload.sub);
-
-    return c.status(204);
   } catch (e) {
     return throwCustomError(e, c);
   }
