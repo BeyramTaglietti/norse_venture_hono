@@ -77,7 +77,7 @@ tripsRouter.delete('/:trip_id', async (c) => {
   }
 });
 
-tripsRouter.put(
+tripsRouter.patch(
   '/:trip_id',
   zValidator('json', CreateTripSchema),
   async (c) => {

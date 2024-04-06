@@ -16,7 +16,7 @@ friendsRouter.use(
 friendsRouter.get('/', async (c) => {
   try {
     const payload = c.get('jwtPayload');
-    const friends = await getFriends(payload.user_id);
+    const friends = await getFriends(payload.sub);
     return c.json(friends);
   } catch (e) {
     return throwCustomError(e, c);
@@ -27,7 +27,7 @@ friendsRouter.delete('/:friend_id', async (c) => {
   try {
     const payload = c.get('jwtPayload');
     const friendId = c.req.param('friend_id');
-    const deletedFriend = await deleteFriend(payload.user_id, friendId);
+    const deletedFriend = await deleteFriend(payload.sub, friendId);
     return c.json(deletedFriend, 200);
   } catch (e) {
     return throwCustomError(e, c);

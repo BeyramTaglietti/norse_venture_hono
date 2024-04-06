@@ -4,11 +4,11 @@ import { friends, users } from '@/drizzle/schema';
 import { InferSelectModel, and, eq } from 'drizzle-orm';
 
 export const getFriends = async (
-  user_id: string,
+  userId: string,
 ): Promise<InferSelectModel<typeof users>[]> => {
   try {
     const foundUser = await db.query.users.findFirst({
-      where: eq(users.id, user_id),
+      where: eq(users.id, userId),
       with: {
         friends: {
           with: {

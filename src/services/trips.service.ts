@@ -148,7 +148,11 @@ export const editTrip = async (
 
     const updatedTrip = await db
       .update(trips)
-      .set(trip)
+      .set({
+        ...trip,
+        background_provider: foundTrip.background_provider,
+        background: foundTrip.background,
+      })
       .where(eq(trips.id, tripId))
       .returning();
 
