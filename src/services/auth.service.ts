@@ -190,7 +190,7 @@ const generateJwtToken = async (userId: string, type: 'access' | 'refresh') => {
   return await sign(
     {
       sub: userId,
-      exp: type === 'access' ? now + day * 120 : now + day * 120,
+      exp: type === 'access' ? now + minute * 15 : now + day * 120,
     },
     type === 'access' ? Bun.env.JWT_SECRET! : Bun.env.JWT_REFRESH_SECRET!,
   );

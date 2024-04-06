@@ -1,6 +1,6 @@
 /* eslint-disable drizzle/enforce-delete-with-where */
 import { throwCustomError } from '@/config/errors';
-import { getFileFromBody } from '@/helpers';
+import { getThumbnailFromBody } from '@/helpers';
 import {
   addPartecipant,
   createTask,
@@ -98,7 +98,7 @@ tripsRouter.post('/:trip_id/thumbnail', async (c) => {
     const payload = c.get('jwtPayload');
     const tripId = c.req.param('trip_id');
 
-    const file = await getFileFromBody(c);
+    const file = await getThumbnailFromBody(c);
 
     const updatedTrip = await updateThumbnail(tripId, payload.sub, file);
     return c.json(updatedTrip, 200);

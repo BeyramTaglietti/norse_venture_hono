@@ -5,7 +5,7 @@ import {
   S3Client,
 } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
-import * as sharp from 'sharp';
+import sharp from 'sharp';
 
 const bucketRegion = process.env.BUCKET_REGION!;
 const accessKey = process.env.BUCKET_ACCESS_KEY!;
@@ -29,7 +29,7 @@ export async function resizeThumbnail(
   let compressedSize: number;
   let qualityValue = quality;
 
-  const buffer = await file.arrayBuffer();
+  const buffer = Buffer.from(await file.arrayBuffer());
 
   compressedImage = sharp(buffer)
     .resize({

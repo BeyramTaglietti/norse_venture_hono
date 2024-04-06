@@ -1,6 +1,6 @@
 /* eslint-disable drizzle/enforce-delete-with-where */
 import { throwCustomError } from '@/config/errors';
-import { getFileFromBody } from '@/helpers';
+import { getThumbnailFromBody } from '@/helpers';
 import {
   deleteAccount,
   getUsersByUsername,
@@ -79,7 +79,7 @@ usersRouter.patch('/set_profile_picture', async (c) => {
   try {
     const payload = c.get('jwtPayload');
 
-    const profilePicture = await getFileFromBody(c);
+    const profilePicture = await getThumbnailFromBody(c);
 
     const newUrl = await setProfilePicture(payload.sub, profilePicture);
 

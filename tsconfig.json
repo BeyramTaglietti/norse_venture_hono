@@ -8,6 +8,7 @@
     "jsxImportSource": "hono/jsx",
     "paths": {
       "@/*": ["./src/*"]
-    }
+    },
+    "allowSyntheticDefaultImports": true
   }
 }
