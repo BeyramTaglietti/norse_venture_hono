@@ -28,7 +28,7 @@ friendsRouter.delete('/:friend_id', async (c) => {
     const payload = c.get('jwtPayload');
     const friendId = c.req.param('friend_id');
     const deletedFriend = await deleteFriend(payload.user_id, friendId);
-    return c.json(deletedFriend);
+    return c.json(deletedFriend, 200);
   } catch (e) {
     return throwCustomError(e, c);
   }

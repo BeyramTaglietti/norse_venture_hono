@@ -3,6 +3,7 @@ import { throwCustomError } from '@/config/errors';
 import { getThumbnailFromBody } from '@/helpers';
 import {
   deleteAccount,
+  getCurrentUser,
   getUsersByUsername,
   setProfilePicture,
   setUsername,
@@ -32,7 +33,19 @@ usersRouter.get('/', async (c) => {
     const payload = c.get('jwtPayload');
     const usersFound = await getUsersByUsername(username, payload.sub);
 
-    return c.json(usersFound);
+    console.log(usersFound);
+
+    return c.json(usersFound, 200);
+  } catch (e) {
+    return throwCustomError(e, c);
+  }
+});
+
+usersRouter.get('/me', async (c) => {
+  try {
+    const payload = c.get('jwtPayload');
+
+    return c.json(await getCurrentUser(payload.sub), 200);
   } catch (e) {
     return throwCustomError(e, c);
   }
@@ -81,9 +94,21 @@ usersRouter.patch('/set_profile_picture', async (c) => {
 
     const profilePicture = await getThumbnailFromBody(c);
 
-    const newUrl = await setProfilePicture(payload.sub, profilePicture);
+    const url = await setProfilePicture(payload.sub, profilePicture);
 
-    return c.text(newUrl, 204);
+    return c.json(url, 200);
+  } catch (e) {
+    return throwCustomError(e, c);
+  }
+});
+
+usersRouter.delete('/delete_account', async (c) => {
+  try {
+    const payload = c.get('jwtPayload');
+
+    await deleteAccount(payload.sub);
+
+    return c.status(204);
   } catch (e) {
     return throwCustomError(e, c);
   }

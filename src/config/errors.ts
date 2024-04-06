@@ -10,14 +10,17 @@ export enum HttpErrors {
 
 export class CustomError extends Error {
   public readonly status: HttpErrors;
-  public readonly message: string;
+  public readonly text: string | object;
 
-  constructor(message: string, status: HttpErrors) {
+  constructor(text: string | object, status: HttpErrors) {
     super();
     Object.setPrototypeOf(this, new.target.prototype);
 
     this.status = status;
-    this.message = message;
+    this.text = text;
+
+    if (typeof text === 'string') this.message = text;
+    else this.message = JSON.stringify(text);
   }
 }
 
