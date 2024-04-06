@@ -1,4 +1,4 @@
-import { CustomError } from '@/config/errors';
+import { CustomError, throwInternalServerError } from '@/config/errors';
 import { resizeThumbnail, uploadToS3 } from '@/config/s3';
 import { db } from '@/drizzle/db';
 import { users } from '@/drizzle/schema';
@@ -30,7 +30,7 @@ export const setUsername = async (
 
     return updatedUser[0];
   } catch (e) {
-    throw new CustomError('Username not available', 400);
+    return throwInternalServerError(e, 'Error updating username');
   }
 };
 

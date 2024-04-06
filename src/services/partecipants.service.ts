@@ -1,7 +1,7 @@
-import { CustomError } from '@/config/errors';
+import { CustomError, throwInternalServerError } from '@/config/errors';
 import { db } from '@/drizzle/db';
 import { trip_partecipants, trips, users } from '@/drizzle/schema';
-import { eq } from 'drizzle-orm';
+import { and, eq } from 'drizzle-orm';
 
 export const getPartecipants = async (tripId: string, userId: string) => {
   try {
@@ -26,7 +26,7 @@ export const getPartecipants = async (tripId: string, userId: string) => {
 
     return tripFound.partecipants.map((x) => x.user);
   } catch (e) {
-    throw new CustomError('Error while fetching partecipants', 500);
+    return throwInternalServerError(e);
   }
 };
 
@@ -37,7 +37,7 @@ export const addPartecipant = async (
 ) => {
   try {
     const tripFound = await db.query.trips.findFirst({
-      where: eq(trips.id, tripId).append(eq(trips.owner_id, userId)),
+      where: and(eq(trips.id, tripId), eq(trips.owner_id, userId)),
       with: {
         partecipants: true,
       },
@@ -71,7 +71,7 @@ export const addPartecipant = async (
 
     return addedPartecipant[0];
   } catch (e) {
-    throw new CustomError('Error while adding partecipant', 500);
+    return throwInternalServerError(e);
   }
 };
 
@@ -82,7 +82,7 @@ export const removePartecipant = async (
 ) => {
   try {
     const tripFound = await db.query.trips.findFirst({
-      where: eq(trips.id, tripId).append(eq(trips.owner_id, userId)),
+      where: and(eq(trips.id, tripId), eq(trips.owner_id, userId)),
       with: {
         partecipants: true,
       },
@@ -103,7 +103,8 @@ export const removePartecipant = async (
     const removedPartecipant = await db
       .delete(trip_partecipants)
       .where(
-        eq(trip_partecipants.trip_id, tripId).append(
+        and(
+          eq(trip_partecipants.trip_id, tripId),
           eq(trip_partecipants.user_id, partecipantId),
         ),
       )
@@ -111,6 +112,6 @@ export const removePartecipant = async (
 
     return removedPartecipant[0];
   } catch (e) {
-    throw new CustomError('Error while removing partecipant', 500);
+    return throwInternalServerError(e);
   }
 };

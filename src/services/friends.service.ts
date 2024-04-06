@@ -1,7 +1,7 @@
-import { CustomError } from '@/config/errors';
+import { CustomError, throwInternalServerError } from '@/config/errors';
 import { db } from '@/drizzle/db';
 import { friends, users } from '@/drizzle/schema';
-import { InferSelectModel, eq } from 'drizzle-orm';
+import { InferSelectModel, and, eq } from 'drizzle-orm';
 
 export const getFriends = async (
   user_id: string,
@@ -22,7 +22,7 @@ export const getFriends = async (
 
     return foundUser.friends.map((friend) => friend.friend);
   } catch (e) {
-    throw new CustomError('Error while fetching friends', 500);
+    return throwInternalServerError(e);
   }
 };
 
@@ -32,9 +32,7 @@ export const deleteFriend = async (
 ): Promise<InferSelectModel<typeof users>> => {
   try {
     const friendToDelete = await db.query.friends.findFirst({
-      where: eq(friends.user_id, userId).append(
-        eq(friends.friend_id, friendId),
-      ),
+      where: and(eq(friends.user_id, userId), eq(friends.friend_id, friendId)),
       with: {
         friend: true,
       },
@@ -48,7 +46,7 @@ export const deleteFriend = async (
       db
         .delete(friends)
         .where(
-          eq(friends.user_id, userId).append(eq(friends.friend_id, friendId)),
+          and(eq(friends.user_id, userId), eq(friends.friend_id, friendId)),
         ),
     );
 
@@ -56,7 +54,7 @@ export const deleteFriend = async (
       db
         .delete(friends)
         .where(
-          eq(friends.user_id, friendId).append(eq(friends.friend_id, userId)),
+          and(eq(friends.user_id, friendId), eq(friends.friend_id, userId)),
         ),
     );
 
@@ -64,6 +62,6 @@ export const deleteFriend = async (
 
     return friendToDelete.friend;
   } catch (e) {
-    throw new CustomError('Error while deleting friend', 500);
+    return throwInternalServerError(e);
   }
 };

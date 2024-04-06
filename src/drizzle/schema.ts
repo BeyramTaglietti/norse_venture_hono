@@ -58,8 +58,12 @@ export const users = pgTable(
 export const usersRelations = relations(users, ({ many }) => ({
   trips: many(trips),
   partecipating_trips: many(trip_partecipants),
-  friend_requests: many(friend_requests),
-  friends: many(friends),
+  friend_requests: many(friend_requests, {
+    relationName: 'receiver',
+  }),
+  friends: many(friends, {
+    relationName: 'user',
+  }),
 }));
 
 export const trips = pgTable('trips', {
@@ -118,10 +122,10 @@ export const trip_partecipants = pgTable(
   {
     user_id: uuid('user_id')
       .notNull()
-      .references(() => users.id),
+      .references(() => users.id, { onDelete: 'cascade', onUpdate: 'cascade' }),
     trip_id: uuid('trip_id')
       .notNull()
-      .references(() => trips.id),
+      .references(() => trips.id, { onDelete: 'cascade', onUpdate: 'cascade' }),
   },
   (t) => ({
     pk: primaryKey({ columns: [t.trip_id, t.user_id] }),
@@ -147,10 +151,10 @@ export const friend_requests = pgTable(
   {
     sender_id: uuid('sender_id')
       .notNull()
-      .references(() => users.id),
+      .references(() => users.id, { onDelete: 'cascade', onUpdate: 'cascade' }),
     receiver_id: uuid('receiver_id')
       .notNull()
-      .references(() => users.id),
+      .references(() => users.id, { onDelete: 'cascade', onUpdate: 'cascade' }),
   },
   (t) => ({
     pk: primaryKey({ columns: [t.sender_id, t.receiver_id] }),
@@ -163,10 +167,12 @@ export const friend_requests_relations = relations(
     receiver: one(users, {
       fields: [friend_requests.receiver_id],
       references: [users.id],
+      relationName: 'receiver',
     }),
     sender: one(users, {
       fields: [friend_requests.sender_id],
       references: [users.id],
+      relationName: 'sender',
     }),
   }),
 );
@@ -176,10 +182,10 @@ export const friends = pgTable(
   {
     user_id: uuid('user_id')
       .notNull()
-      .references(() => users.id),
+      .references(() => users.id, { onDelete: 'cascade', onUpdate: 'cascade' }),
     friend_id: uuid('friend_id')
       .notNull()
-      .references(() => users.id),
+      .references(() => users.id, { onDelete: 'cascade', onUpdate: 'cascade' }),
   },
   (t) => ({
     pk: primaryKey({ columns: [t.user_id, t.friend_id] }),
@@ -190,9 +196,11 @@ export const friends_relations = relations(friends, ({ one }) => ({
   friend: one(users, {
     fields: [friends.friend_id],
     references: [users.id],
+    relationName: 'friend',
   }),
   user: one(users, {
     fields: [friends.user_id],
     references: [users.id],
+    relationName: 'user',
   }),
 }));

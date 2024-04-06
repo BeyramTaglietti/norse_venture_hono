@@ -1,8 +1,8 @@
-import { CustomError } from '@/config/errors';
+import { CustomError, throwInternalServerError } from '@/config/errors';
 import { db } from '@/drizzle/db';
 import { tasks, trips } from '@/drizzle/schema';
 import { CreateTaskSchemaType, UpdateTaskSchemaType } from '@/validators';
-import { InferInsertModel, eq } from 'drizzle-orm';
+import { InferInsertModel, and, eq } from 'drizzle-orm';
 
 export const getTasks = async (tripId: string, userId: string) => {
   try {
@@ -24,7 +24,7 @@ export const getTasks = async (tripId: string, userId: string) => {
 
     return tripFound.tasks;
   } catch (e) {
-    throw new CustomError('Error while fetching tasks', 500);
+    return throwInternalServerError(e);
   }
 };
 
@@ -58,7 +58,7 @@ export const createTask = async (
 
     return newTask;
   } catch (e) {
-    throw new CustomError('Error while creating task', 500);
+    return throwInternalServerError(e);
   }
 };
 
@@ -99,12 +99,12 @@ export const putTask = async (
     const updatedTask = await db
       .update(tasks)
       .set(taskToUpdate)
-      .where(eq(tasks.id, taskId).append(eq(tasks.trip_id, tripId)))
+      .where(and(eq(tasks.id, taskId), eq(tasks.trip_id, tripId)))
       .returning();
 
     return updatedTask;
   } catch (e) {
-    throw new CustomError('Error while updating task', 500);
+    return throwInternalServerError(e);
   }
 };
 
@@ -138,11 +138,11 @@ export const deleteTask = async (
 
     const deletedTask = await db
       .delete(tasks)
-      .where(eq(tasks.id, taskId).append(eq(tasks.trip_id, tripId)))
+      .where(and(eq(tasks.id, taskId), eq(tasks.trip_id, tripId)))
       .returning();
 
     return deletedTask;
   } catch (e) {
-    throw new CustomError('Error while deleting task', 500);
+    return throwInternalServerError(e);
   }
 };

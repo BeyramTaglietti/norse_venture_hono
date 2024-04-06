@@ -1,4 +1,4 @@
-import { CustomError } from '@/config/errors';
+import { throwInternalServerError } from '@/config/errors';
 import { keywordUnsplashImages, randomUnsplashImages } from '@/models';
 
 export const getImages = async (
@@ -66,7 +66,7 @@ export const getImages = async (
         };
       });
   } catch (err) {
-    throw new CustomError('Could not load unsplash images', 500);
+    return throwInternalServerError(err, 'Could not fetch unplash images');
   }
 };
 
@@ -84,6 +84,6 @@ export const triggerDownload = async (url: string) => {
     const data = await res.json();
     return data;
   } catch (err) {
-    throw new CustomError('Could not trigger download', 500);
+    return throwInternalServerError(err, 'Could not trigger download');
   }
 };

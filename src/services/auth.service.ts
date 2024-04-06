@@ -1,4 +1,8 @@
-import { CustomError, HttpErrors } from '@/config/errors';
+import {
+  CustomError,
+  HttpErrors,
+  throwInternalServerError,
+} from '@/config/errors';
 import { db } from '@/drizzle/db';
 import { users } from '@/drizzle/schema';
 import { LoginResponse } from '@/models';
@@ -60,7 +64,7 @@ export const refreshToken = async (currentRefreshToken: string) => {
       user: updatedUser[0],
     };
   } catch (e) {
-    throw new CustomError('Invalid token', HttpErrors.UNAUTHORIZED);
+    return throwInternalServerError(e);
   }
 };
 
@@ -178,12 +182,15 @@ const getRandomUsername = async () => {
 };
 
 const generateJwtToken = async (userId: string, type: 'access' | 'refresh') => {
-  const minute = Math.floor(Date.now() / 1000) + 60;
+  const now = Math.floor(Date.now() / 1000);
+
+  const minute = 60;
+  const day = minute * 60 * 24;
 
   return await sign(
     {
       sub: userId,
-      exp: type === 'access' ? minute * 15 : minute * 60 * 24 * 120,
+      exp: type === 'access' ? now + day * 120 : now + day * 120,
     },
     type === 'access' ? Bun.env.JWT_SECRET! : Bun.env.JWT_REFRESH_SECRET!,
   );

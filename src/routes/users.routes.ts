@@ -27,7 +27,7 @@ usersRouter.get('/', async (c) => {
     const username = c.req.query('username') ?? '';
 
     const res = usernameSchema.safeParse(username);
-    if (!res.success) return throwCustomError(res.error, c);
+    if (!res.success) return c.json(res, 400);
 
     const payload = c.get('jwtPayload');
     const usersFound = await getUsersByUsername(username, payload.sub);
@@ -54,9 +54,8 @@ usersRouter.put('/', zValidator('json', ChangeUsernameSchema), async (c) => {
 usersRouter.get('/username_available', async (c) => {
   try {
     const username = c.req.query('username') ?? '';
-    console.log('received username', username);
     const res = usernameSchema.safeParse(username);
-    if (!res.success) return throwCustomError(res.error, c);
+    if (!res.success) return c.json(res, 400);
 
     return c.text(String(await usernameAvailable(username)));
   } catch (e) {

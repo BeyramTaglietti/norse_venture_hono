@@ -25,9 +25,22 @@ export const throwCustomError = (
   error: CustomError | Error | unknown,
   c: Context,
 ) => {
+  console.log(JSON.stringify(error, null, 2));
+
   if (error instanceof CustomError) {
     return c.json({ message: error }, error.status);
   } else if (error instanceof Error) {
     return c.json({ message: error.message }, 500);
   }
+};
+
+export const throwInternalServerError = (e: unknown, message?: string) => {
+  if (e instanceof CustomError) {
+    throw e;
+  }
+
+  throw new CustomError(
+    message ?? 'Internal server error',
+    HttpErrors.INTERNAL_ERROR,
+  );
 };

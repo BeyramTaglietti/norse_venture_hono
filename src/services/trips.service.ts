@@ -1,4 +1,4 @@
-import { CustomError } from '@/config/errors';
+import { CustomError, throwInternalServerError } from '@/config/errors';
 import {
   getSignedImageUrl,
   resizeThumbnail,
@@ -10,7 +10,7 @@ import { trip_partecipants, trips } from '@/drizzle/schema';
 import { ImageProvider } from '@/models';
 import { CreateTripSchemaType } from '@/validators';
 import { DeleteObjectCommand } from '@aws-sdk/client-s3';
-import { InferInsertModel, InferSelectModel, eq } from 'drizzle-orm';
+import { InferInsertModel, InferSelectModel, and, eq } from 'drizzle-orm';
 
 export const getTrips = async (user_id: string) => {
   try {
@@ -39,14 +39,18 @@ export const getTrips = async (user_id: string) => {
 
     return trips;
   } catch (e) {
-    throw new CustomError('Error while fetching trips', 500);
+    return throwInternalServerError(e);
   }
 };
 
-export const getTrip = async (trip_id: string, user_id: string) => {
+export const getTrip = async (
+  trip_id: string,
+  user_id: string,
+): Promise<InferSelectModel<typeof trips>> => {
   try {
     const foundTrip = await db.query.trip_partecipants.findFirst({
-      where: eq(trip_partecipants.trip_id, trip_id).append(
+      where: and(
+        eq(trip_partecipants.trip_id, trip_id),
         eq(trip_partecipants.user_id, user_id),
       ),
       with: {
@@ -62,9 +66,9 @@ export const getTrip = async (trip_id: string, user_id: string) => {
       foundTrip.trip.background = await getTripThumbnail(foundTrip.trip_id);
     }
 
-    return foundTrip;
+    return foundTrip.trip;
   } catch (e) {
-    throw new CustomError('Error while fetching trip', 500);
+    return throwInternalServerError(e);
   }
 };
 
@@ -79,20 +83,23 @@ export const createTrip = async (
 
   try {
     const createdTrip = await db.insert(trips).values(tripToCreate).returning();
-    await db.insert(trip_partecipants).values({
-      trip_id: createdTrip[0].id,
-      user_id,
-    });
-    return createdTrip[0];
+    const firstPartecipants = await db
+      .insert(trip_partecipants)
+      .values({
+        trip_id: createdTrip[0].id,
+        user_id,
+      })
+      .returning();
+    return { ...createdTrip[0], partecipants: [firstPartecipants[0]] };
   } catch (e) {
-    throw new CustomError('Error while creating trip', 500);
+    return throwInternalServerError(e);
   }
 };
 
 export const deleteTrip = async (trip_id: string, user_id: string) => {
   try {
     const foundTrip = await db.query.trips.findFirst({
-      where: eq(trips.id, trip_id).append(eq(trips.owner_id, user_id)),
+      where: and(eq(trips.id, trip_id), eq(trips.owner_id, user_id)),
     });
 
     if (!foundTrip) {
@@ -114,7 +121,7 @@ export const deleteTrip = async (trip_id: string, user_id: string) => {
 
     return deletedTrip;
   } catch (e) {
-    throw new CustomError('Error while deleting trip', 500);
+    return throwInternalServerError(e);
   }
 };
 
@@ -125,7 +132,7 @@ export const editTrip = async (
 ) => {
   try {
     const foundTrip = await db.query.trips.findFirst({
-      where: eq(trips.id, tripId).append(eq(trips.owner_id, userId)),
+      where: and(eq(trips.id, tripId), eq(trips.owner_id, userId)),
     });
 
     if (!foundTrip) {
@@ -147,7 +154,7 @@ export const editTrip = async (
 
     return updatedTrip[0];
   } catch (e) {
-    throw new CustomError('Error while updating trip', 500);
+    return throwInternalServerError(e);
   }
 };
 
@@ -157,7 +164,7 @@ export const updateThumbnail = async (
   thumbnail: File,
 ): Promise<string> => {
   const trip = await db.query.trips.findFirst({
-    where: eq(trips.id, tripId).append(eq(trips.owner_id, userId)),
+    where: and(eq(trips.id, tripId), eq(trips.owner_id, userId)),
   });
 
   if (!trip) throw new CustomError('Trip not found', 404);
@@ -204,6 +211,6 @@ const removeTripThumbnail = async (tripId: string): Promise<void> => {
       throw new CustomError('Error while deleting trip thumbnail', 500);
     }
   } catch (e) {
-    throw new CustomError('Error while deleting trip thumbnail', 500);
+    return throwInternalServerError(e);
   }
 };
