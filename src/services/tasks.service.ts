@@ -2,7 +2,7 @@ import { CustomError, throwInternalServerError } from '@/config/errors';
 import { db } from '@/drizzle/db';
 import { tasks, trips } from '@/drizzle/schema';
 import { CreateTaskSchemaType, UpdateTaskSchemaType } from '@/validators';
-import { InferInsertModel, and, eq } from 'drizzle-orm';
+import { InferInsertModel, InferSelectModel, and, eq } from 'drizzle-orm';
 
 export const getTasks = async (tripId: string, userId: string) => {
   try {
@@ -32,7 +32,7 @@ export const createTask = async (
   tripId: string,
   userId: string,
   task: CreateTaskSchemaType,
-) => {
+): Promise<InferSelectModel<typeof tasks>> => {
   try {
     const tripFound = await db.query.trips.findFirst({
       where: eq(trips.id, tripId),
@@ -54,9 +54,9 @@ export const createTask = async (
       trip_id: tripId,
     };
 
-    const newTask = await db.insert(tasks).values(taskToCreate);
+    const newTask = await db.insert(tasks).values(taskToCreate).returning();
 
-    return newTask;
+    return newTask[0];
   } catch (e) {
     return throwInternalServerError(e);
   }
