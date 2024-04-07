@@ -151,8 +151,10 @@ export const editTrip = async (
     .update(trips)
     .set({
       ...trip,
-      background_provider: foundTrip.background_provider,
-      background: foundTrip.background,
+      background_provider: trip.background_provider
+        ? trip.background_provider
+        : foundTrip.background_provider,
+      background: trip.background ? trip.background : foundTrip.background,
     })
     .where(eq(trips.id, tripId))
     .returning();

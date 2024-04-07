@@ -1,4 +1,3 @@
-/* eslint-disable drizzle/enforce-delete-with-where */
 import { HttpStatus } from '@/config/errors';
 import { getThumbnailFromBody } from '@/helpers';
 import {
@@ -43,6 +42,7 @@ tripsRouter.post('/', zValidator('json', CreateTripSchema), async (c) => {
   return c.json(createdTrip, HttpStatus.CREATED);
 });
 
+// eslint-disable-next-line drizzle/enforce-delete-with-where
 tripsRouter.delete('/:trip_id', async (c) => {
   const payload = c.get('jwtPayload');
   const tripId = c.req.param('trip_id');
