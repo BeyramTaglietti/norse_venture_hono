@@ -6,6 +6,8 @@ import { client } from './drizzle/db';
 import {
   authRouter,
   friendsRouter,
+  partecipantsRouter,
+  tasksRouter,
   tripsRouter,
   unsplashRouter,
   usersRouter,
@@ -18,6 +20,8 @@ const router = new Hono(); // .basePath('/v1')
 if (Bun.env.NODE_ENV === 'development') router.use(logger());
 
 router.route('v1/trips', tripsRouter);
+router.route('v1/trips', partecipantsRouter);
+router.route('v1/trips', tasksRouter);
 router.route('v1/auth', authRouter);
 router.route('v1/unsplash', unsplashRouter);
 router.route('v1/users', usersRouter);
