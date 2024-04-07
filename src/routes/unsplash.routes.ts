@@ -1,5 +1,5 @@
-import { throwCustomError } from '@/config/errors';
-import { getImages } from '@/services';
+import { HttpStatus } from '@/config/errors';
+import { getImages, triggerDownload } from '@/services';
 import { zValidator } from '@hono/zod-validator';
 import { Hono } from 'hono';
 import { jwt } from 'hono/jwt';
@@ -15,13 +15,9 @@ unsplashRouter.use(
 );
 
 unsplashRouter.get('/', async (c) => {
-  try {
-    const keyword = c.req.query('keyword') ?? '';
-    const images = await getImages(keyword);
-    return c.json(images, 200);
-  } catch (error) {
-    return throwCustomError(error, c);
-  }
+  const keyword = c.req.query('keyword') ?? '';
+  const images = await getImages(keyword);
+  return c.json(images);
 });
 
 unsplashRouter.post(
@@ -33,13 +29,9 @@ unsplashRouter.post(
     }),
   ),
   async (c) => {
-    try {
-      const body = c.req.valid('json');
-      const images = await getImages(body.url);
-      return c.json(images, 200);
-    } catch (error) {
-      return throwCustomError(error, c);
-    }
+    const body = c.req.valid('json');
+    await triggerDownload(body.url);
+    return c.json({ message: 'Download triggered' }, HttpStatus.NO_CONTENT);
   },
 );
 

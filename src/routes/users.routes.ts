@@ -1,5 +1,5 @@
 /* eslint-disable drizzle/enforce-delete-with-where */
-import { throwCustomError } from '@/config/errors';
+import { HttpStatus } from '@/config/errors';
 import { getThumbnailFromBody } from '@/helpers';
 import {
   deleteAccount,
@@ -13,6 +13,7 @@ import { ChangeUsernameSchema, usernameSchema } from '@/validators';
 import { zValidator } from '@hono/zod-validator';
 import { Hono } from 'hono';
 import { jwt } from 'hono/jwt';
+import { z } from 'zod';
 
 const usersRouter = new Hono();
 
@@ -23,81 +24,59 @@ usersRouter.use(
   }),
 );
 
-usersRouter.get('/', async (c) => {
-  try {
-    const username = c.req.query('username') ?? '';
-
-    const res = usernameSchema.safeParse(username);
-    if (!res.success) return c.json(res, 400);
+usersRouter.get(
+  '/',
+  zValidator('query', z.object({ username: usernameSchema })),
+  async (c) => {
+    const { username } = c.req.valid('query');
 
     const payload = c.get('jwtPayload');
     const usersFound = await getUsersByUsername(username, payload.sub);
 
-    return c.json(usersFound, 200);
-  } catch (e) {
-    return throwCustomError(e, c);
-  }
-});
+    return c.json(usersFound);
+  },
+);
 
 usersRouter.get('/me', async (c) => {
-  try {
-    const payload = c.get('jwtPayload');
+  const payload = c.get('jwtPayload');
 
-    return c.json(await getCurrentUser(payload.sub), 200);
-  } catch (e) {
-    return throwCustomError(e, c);
-  }
+  return c.json(await getCurrentUser(payload.sub));
 });
 
-usersRouter.put('/', zValidator('json', ChangeUsernameSchema), async (c) => {
-  try {
-    const payload = c.get('jwtPayload');
-    const user = c.req.valid('json');
+usersRouter.patch('/', zValidator('json', ChangeUsernameSchema), async (c) => {
+  const payload = c.get('jwtPayload');
+  const { username } = c.req.valid('json');
 
-    const updatedUser = await setUsername(user, payload.sub);
+  const updatedUser = await setUsername(username, payload.sub);
 
-    return c.json(updatedUser);
-  } catch (e) {
-    return throwCustomError(e, c);
-  }
+  return c.json(updatedUser);
 });
 
-usersRouter.get('/username_available', async (c) => {
-  try {
-    const username = c.req.query('username') ?? '';
-    const res = usernameSchema.safeParse(username);
-    if (!res.success) return c.json(res, 400);
-
+usersRouter.get(
+  '/username_available',
+  zValidator('query', z.object({ username: usernameSchema })),
+  async (c) => {
+    const { username } = c.req.valid('query');
     return c.text(String(await usernameAvailable(username)));
-  } catch (e) {
-    return throwCustomError(e, c);
-  }
-});
+  },
+);
 
 usersRouter.patch('/set_profile_picture', async (c) => {
-  try {
-    const payload = c.get('jwtPayload');
+  const payload = c.get('jwtPayload');
 
-    const profilePicture = await getThumbnailFromBody(c);
+  const profilePicture = await getThumbnailFromBody(c);
 
-    const url = await setProfilePicture(payload.sub, profilePicture);
+  const url = await setProfilePicture(payload.sub, profilePicture);
 
-    return c.json(url, 200);
-  } catch (e) {
-    return throwCustomError(e, c);
-  }
+  return c.json(url);
 });
 
 usersRouter.delete('/delete_account', async (c) => {
-  try {
-    const payload = c.get('jwtPayload');
+  const payload = c.get('jwtPayload');
 
-    await deleteAccount(payload.sub);
+  await deleteAccount(payload.sub);
 
-    return c.status(204);
-  } catch (e) {
-    return throwCustomError(e, c);
-  }
+  return c.status(HttpStatus.NO_CONTENT);
 });
 
 export { usersRouter };

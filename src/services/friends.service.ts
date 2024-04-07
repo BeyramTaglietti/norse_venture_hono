@@ -1,67 +1,62 @@
-import { CustomError, throwInternalServerError } from '@/config/errors';
+import { HttpStatus } from '@/config/errors';
 import { db } from '@/drizzle/db';
 import { friends, users } from '@/drizzle/schema';
 import { InferSelectModel, and, eq } from 'drizzle-orm';
+import { HTTPException } from 'hono/http-exception';
 
 export const getFriends = async (
   userId: string,
 ): Promise<InferSelectModel<typeof users>[]> => {
-  try {
-    const foundUser = await db.query.users.findFirst({
-      where: eq(users.id, userId),
-      with: {
-        friends: {
-          with: {
-            friend: true,
-          },
+  const foundUser = await db.query.users.findFirst({
+    where: eq(users.id, userId),
+    with: {
+      friends: {
+        with: {
+          friend: true,
         },
       },
+    },
+  });
+
+  if (!foundUser)
+    throw new HTTPException(HttpStatus.NOT_FOUND, {
+      message: 'User not found',
     });
 
-    if (!foundUser) throw new CustomError('User not found', 404);
-
-    return foundUser.friends.map((friend) => friend.friend);
-  } catch (e) {
-    return throwInternalServerError(e);
-  }
+  return foundUser.friends.map((friend) => friend.friend);
 };
 
 export const deleteFriend = async (
   userId: string,
   friendId: string,
 ): Promise<InferSelectModel<typeof users>> => {
-  try {
-    const friendToDelete = await db.query.friends.findFirst({
-      where: and(eq(friends.user_id, userId), eq(friends.friend_id, friendId)),
-      with: {
-        friend: true,
-      },
+  const friendToDelete = await db.query.friends.findFirst({
+    where: and(eq(friends.user_id, userId), eq(friends.friend_id, friendId)),
+    with: {
+      friend: true,
+    },
+  });
+
+  if (!friendToDelete)
+    throw new HTTPException(HttpStatus.NOT_FOUND, {
+      message: 'Friend not found',
     });
 
-    if (!friendToDelete) throw new CustomError('Friend not found', 404);
+  const promises = [];
 
-    const promises = [];
+  promises.push(
+    db
+      .delete(friends)
+      .where(and(eq(friends.user_id, userId), eq(friends.friend_id, friendId))),
+  );
 
-    promises.push(
-      db
-        .delete(friends)
-        .where(
-          and(eq(friends.user_id, userId), eq(friends.friend_id, friendId)),
-        ),
-    );
+  promises.push(
+    db
+      .delete(friends)
+      .where(and(eq(friends.user_id, friendId), eq(friends.friend_id, userId))),
+  );
 
-    promises.push(
-      db
-        .delete(friends)
-        .where(
-          and(eq(friends.user_id, friendId), eq(friends.friend_id, userId)),
-        ),
-    );
+  await Promise.all(promises);
 
-    await Promise.all(promises);
-
-    return friendToDelete.friend;
-  } catch (e) {
-    return throwInternalServerError(e);
-  }
+  return friendToDelete.friend;
 };

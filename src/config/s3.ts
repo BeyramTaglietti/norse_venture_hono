@@ -6,6 +6,7 @@ import {
 } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import sharp from 'sharp';
+import { HttpStatus } from './errors';
 
 const bucketRegion = process.env.BUCKET_REGION!;
 const accessKey = process.env.BUCKET_ACCESS_KEY!;
@@ -95,7 +96,7 @@ export async function uploadToS3({
 
   const s3UploadResult = await s3Client.send(command);
 
-  if (s3UploadResult.$metadata.httpStatusCode !== 200) {
+  if (s3UploadResult.$metadata.httpStatusCode !== HttpStatus.OK) {
     throw 'Failed to upload thumbnail';
   }
 

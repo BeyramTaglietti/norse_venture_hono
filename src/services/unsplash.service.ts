@@ -1,5 +1,6 @@
-import { throwInternalServerError } from '@/config/errors';
+import { HttpStatus } from '@/config/errors';
 import { keywordUnsplashImages, randomUnsplashImages } from '@/models';
+import { HTTPException } from 'hono/http-exception';
 
 export const getImages = async (
   keyword: string,
@@ -66,24 +67,22 @@ export const getImages = async (
         };
       });
   } catch (err) {
-    return throwInternalServerError(err, 'Could not fetch unplash images');
+    throw new HTTPException(HttpStatus.INTERNAL_SERVER_ERROR, {
+      message: 'Could not fetch unplash images',
+    });
   }
 };
 
 export const triggerDownload = async (url: string) => {
-  try {
-    const res = await fetch(
-      url +
-        new URLSearchParams({
-          client_id: Bun.env.UNSPLASH_ACCESS_KEY!,
-        }),
-      {
-        method: 'POST',
-      },
-    );
-    const data = await res.json();
-    return data;
-  } catch (err) {
-    return throwInternalServerError(err, 'Could not trigger download');
-  }
+  const res = await fetch(
+    url +
+      new URLSearchParams({
+        client_id: Bun.env.UNSPLASH_ACCESS_KEY!,
+      }),
+    {
+      method: 'POST',
+    },
+  );
+  const data = await res.json();
+  return data;
 };

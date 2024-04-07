@@ -1,13 +1,10 @@
-import {
-  CustomError,
-  HttpErrors,
-  throwInternalServerError,
-} from '@/config/errors';
+import { HttpStatus } from '@/config/errors';
 import { db } from '@/drizzle/db';
 import { users } from '@/drizzle/schema';
 import { LoginResponse } from '@/models';
 import { InferSelectModel, eq } from 'drizzle-orm';
 import { OAuth2Client } from 'google-auth-library';
+import { HTTPException } from 'hono/http-exception';
 import { sign, verify } from 'hono/jwt';
 import verifyAppleToken from 'verify-apple-id-token';
 
@@ -32,40 +29,40 @@ export const appleLogin = async (token: string): Promise<LoginResponse> => {
 };
 
 export const refreshToken = async (currentRefreshToken: string) => {
-  try {
-    const payload = await verify(
-      currentRefreshToken,
-      Bun.env.JWT_REFRESH_SECRET!,
-    );
+  const payload = await verify(
+    currentRefreshToken,
+    Bun.env.JWT_REFRESH_SECRET!,
+  );
 
-    const user = await db.query.users.findFirst({
-      where: eq(users.id, payload.sub),
+  const user = await db.query.users.findFirst({
+    where: eq(users.id, payload.sub),
+  });
+
+  if (!user || !user.refresh_token)
+    throw new HTTPException(HttpStatus.UNAUTHORIZED, {
+      message: 'Invalid operation',
     });
 
-    if (!user || !user.refresh_token)
-      throw new CustomError('Invalid operation', HttpErrors.UNAUTHORIZED);
+  const tokenIsValid = await Bun.password.verify(
+    currentRefreshToken,
+    user.refresh_token,
+  );
 
-    const tokenIsValid = await Bun.password.verify(
-      currentRefreshToken,
-      user.refresh_token,
-    );
+  if (!tokenIsValid)
+    throw new HTTPException(HttpStatus.UNAUTHORIZED, {
+      message: 'Invalid token',
+    });
 
-    if (!tokenIsValid)
-      throw new CustomError('Invalid token', HttpErrors.UNAUTHORIZED);
+  const access_token = await generateJwtToken(user.id, 'access');
+  const refresh_token = await generateJwtToken(user.id, 'refresh');
 
-    const access_token = await generateJwtToken(user.id, 'access');
-    const refresh_token = await generateJwtToken(user.id, 'refresh');
+  const updatedUser = await updateRefreshToken(user.id, refresh_token);
 
-    const updatedUser = await updateRefreshToken(user.id, refresh_token);
-
-    return {
-      access_token,
-      refresh_token,
-      user: updatedUser[0],
-    };
-  } catch (e) {
-    return throwInternalServerError(e);
-  }
+  return {
+    access_token,
+    refresh_token,
+    user: updatedUser[0],
+  };
 };
 
 const login = async ({
@@ -150,7 +147,9 @@ const verifyGoogleToken = async (token: string) => {
   const payload = ticket.getPayload();
 
   if (!payload)
-    throw new CustomError('Invalid token', HttpErrors.INTERNAL_ERROR);
+    throw new HTTPException(HttpStatus.INTERNAL_SERVER_ERROR, {
+      message: 'Invalid token',
+    });
 
   return payload;
 };
