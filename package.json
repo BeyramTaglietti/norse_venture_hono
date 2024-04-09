@@ -21,9 +21,9 @@
     "drizzle-orm": "^0.30.6",
     "google-auth-library": "^9.7.0",
     "hono": "^4.1.5",
+    "jose": "^5.2.4",
     "pg": "^8.11.4",
-    "sharp": "^0.33.3",
-    "verify-apple-id-token": "^3.1.2"
+    "sharp": "^0.33.3"
   },
   "devDependencies": {
     "@types/bun": "latest",

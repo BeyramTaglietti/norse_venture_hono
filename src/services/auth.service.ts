@@ -1,12 +1,12 @@
 import { HttpStatus } from '@/config/errors';
 import { db } from '@/drizzle/db';
 import { users } from '@/drizzle/schema';
+import { verifyAppleToken } from '@/helpers';
 import { LoginResponse } from '@/models';
 import { InferSelectModel, eq } from 'drizzle-orm';
 import { OAuth2Client } from 'google-auth-library';
 import { HTTPException } from 'hono/http-exception';
 import { sign, verify } from 'hono/jwt';
-import verifyAppleToken from 'verify-apple-id-token';
 
 export const googleLogin = async (token: string): Promise<LoginResponse> => {
   const payload = await verifyGoogleToken(token);

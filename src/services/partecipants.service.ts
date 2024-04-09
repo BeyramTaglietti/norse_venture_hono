@@ -62,7 +62,7 @@ export const addPartecipant = async (
     },
   });
 
-  if (!user?.friends.find((x) => x.user_id === partecipantId))
+  if (!user?.friends.find((x) => x.friend_id === partecipantId))
     throw new HTTPException(HttpStatus.FORBIDDEN, {
       message: 'Can only add friends to trip',
     });
