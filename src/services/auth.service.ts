@@ -84,10 +84,17 @@ const login = async ({
 
     await updateRefreshToken(user.id, refresh_token);
 
+    const { id, email, username, profile_picture } = user;
+
     return {
       access_token,
       refresh_token,
-      user,
+      user: {
+        id,
+        email,
+        username,
+        profile_picture,
+      },
     };
   } else {
     const access_token = await generateJwtToken(
@@ -101,10 +108,17 @@ const login = async ({
 
     await updateRefreshToken(userExists.id, refresh_token);
 
+    const { id, email, username, profile_picture } = userExists;
+
     return {
       access_token,
       refresh_token,
-      user: userExists,
+      user: {
+        id,
+        email,
+        username,
+        profile_picture,
+      },
     };
   }
 };
