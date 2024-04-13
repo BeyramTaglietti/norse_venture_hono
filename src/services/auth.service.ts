@@ -84,7 +84,7 @@ const login = async ({
 
     await updateRefreshToken(user.id, refresh_token);
 
-    const { id, email, username, profile_picture } = user;
+    const { id, email, username, profile_picture, created_at } = user;
 
     return {
       access_token,
@@ -94,6 +94,7 @@ const login = async ({
         email,
         username,
         profile_picture,
+        created_at,
       },
     };
   } else {
@@ -108,7 +109,7 @@ const login = async ({
 
     await updateRefreshToken(userExists.id, refresh_token);
 
-    const { id, email, username, profile_picture } = userExists;
+    const { id, email, username, profile_picture, created_at } = userExists;
 
     return {
       access_token,
@@ -118,6 +119,7 @@ const login = async ({
         email,
         username,
         profile_picture,
+        created_at,
       },
     };
   }

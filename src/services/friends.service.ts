@@ -1,18 +1,26 @@
 import { HttpStatus } from '@/config/errors';
 import { db } from '@/drizzle/db';
 import { friend_requests, friends, users } from '@/drizzle/schema';
-import { InferInsertModel, InferSelectModel, and, eq, or } from 'drizzle-orm';
+import { SafeUser } from '@/models';
+import { InferInsertModel, and, eq, or } from 'drizzle-orm';
 import { HTTPException } from 'hono/http-exception';
 
-export const getFriends = async (
-  userId: string,
-): Promise<InferSelectModel<typeof users>[]> => {
+export const getFriends = async (userId: string): Promise<SafeUser[]> => {
   const foundUser = await db.query.users.findFirst({
     where: eq(users.id, userId),
+
     with: {
       friends: {
         with: {
-          friend: true,
+          friend: {
+            columns: {
+              id: true,
+              email: true,
+              created_at: true,
+              profile_picture: true,
+              username: true,
+            },
+          },
         },
       },
     },
@@ -29,11 +37,19 @@ export const getFriends = async (
 export const deleteFriend = async (
   userId: string,
   friendId: string,
-): Promise<InferSelectModel<typeof users>> => {
+): Promise<SafeUser> => {
   const friendToDelete = await db.query.friends.findFirst({
     where: and(eq(friends.user_id, userId), eq(friends.friend_id, friendId)),
     with: {
-      friend: true,
+      friend: {
+        columns: {
+          id: true,
+          email: true,
+          created_at: true,
+          profile_picture: true,
+          username: true,
+        },
+      },
     },
   });
 
@@ -64,7 +80,7 @@ export const deleteFriend = async (
 export const getFriendRequests = async (
   userId: string,
   type: 'sent' | 'received',
-): Promise<InferSelectModel<typeof users>[]> => {
+): Promise<SafeUser[]> => {
   const whereClause =
     type === 'sent'
       ? eq(friend_requests.sender_id, userId)
@@ -73,8 +89,24 @@ export const getFriendRequests = async (
   const friendRequestsFound = await db.query.friend_requests.findMany({
     where: whereClause,
     with: {
-      sender: true,
-      receiver: true,
+      sender: {
+        columns: {
+          id: true,
+          email: true,
+          created_at: true,
+          profile_picture: true,
+          username: true,
+        },
+      },
+      receiver: {
+        columns: {
+          id: true,
+          email: true,
+          created_at: true,
+          profile_picture: true,
+          username: true,
+        },
+      },
     },
   });
 
@@ -142,14 +174,22 @@ export const addFriendRequest = async (
 export const acceptFriendRequest = async (
   userId: string,
   friendId: string,
-): Promise<InferInsertModel<typeof users>> => {
+): Promise<SafeUser> => {
   const friendRequest = await db.query.friend_requests.findFirst({
     where: and(
       eq(friend_requests.sender_id, friendId),
       eq(friend_requests.receiver_id, userId),
     ),
     with: {
-      sender: true,
+      sender: {
+        columns: {
+          id: true,
+          email: true,
+          created_at: true,
+          profile_picture: true,
+          username: true,
+        },
+      },
     },
   });
 
@@ -187,14 +227,22 @@ export const acceptFriendRequest = async (
 export const denyFriendRequest = async (
   userId: string,
   friendId: string,
-): Promise<InferInsertModel<typeof users>> => {
+): Promise<SafeUser> => {
   const friendRequest = await db.query.friend_requests.findFirst({
     where: and(
       eq(friend_requests.sender_id, friendId),
       eq(friend_requests.receiver_id, userId),
     ),
     with: {
-      sender: true,
+      sender: {
+        columns: {
+          id: true,
+          email: true,
+          created_at: true,
+          profile_picture: true,
+          username: true,
+        },
+      },
     },
   });
 

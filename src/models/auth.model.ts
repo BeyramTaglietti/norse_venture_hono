@@ -6,5 +6,6 @@ export type LoginResponse = {
     email: string;
     username: string;
     profile_picture: string | null;
+    created_at: Date;
   };
 };
