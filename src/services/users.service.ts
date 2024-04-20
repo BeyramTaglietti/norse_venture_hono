@@ -19,6 +19,7 @@ export const getUsersByUsername = async (
       profile_picture: true,
       username: true,
     },
+    limit: 20,
   });
 
   return usersFound.filter((user) => user.id !== userId);
