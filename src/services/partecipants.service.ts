@@ -84,29 +84,31 @@ export const removePartecipant = async (
   partecipantId: string,
 ) => {
   const tripFound = await db.query.trips.findFirst({
-    where: and(eq(trips.id, tripId), eq(trips.owner_id, userId)),
+    where: and(eq(trips.id, tripId)),
     with: {
       partecipants: true,
     },
   });
 
-  if (!tripFound) {
+  if (!tripFound || !tripFound.partecipants.find((x) => x.user_id === userId)) {
     throw new HTTPException(HttpStatus.NOT_FOUND, {
       message: 'Trip not found',
     });
   }
 
-  if (!tripFound.partecipants.find((x) => x.user_id === partecipantId)) {
-    throw new HTTPException(HttpStatus.FORBIDDEN, {
-      message: 'User not partecipant of this trip',
-    });
+  if (tripFound.owner_id !== userId) {
+    if (partecipantId !== userId) {
+      throw new HTTPException(HttpStatus.FORBIDDEN, {
+        message: 'Cannot remove other partecipants',
+      });
+    }
   }
 
-  // owner or non-owner is deleting owner
-  if (partecipantId === tripFound.owner_id)
+  if (partecipantId === tripFound.owner_id) {
     throw new HTTPException(HttpStatus.FORBIDDEN, {
       message: 'Cannot remove owner, delete trip instead',
     });
+  }
 
   const removedPartecipant = await db
     .delete(trip_partecipants)
