@@ -7,6 +7,7 @@ import {
   authRouter,
   friendsRouter,
   partecipantsRouter,
+  statsRouter,
   tasksRouter,
   tripsRouter,
   unsplashRouter,
@@ -26,6 +27,8 @@ router.route('v1/auth', authRouter);
 router.route('v1/unsplash', unsplashRouter);
 router.route('v1/users', usersRouter);
 router.route('v1/friends', friendsRouter);
+
+router.route('stats', statsRouter);
 
 router.get('/', (c) => {
   return c.text('This is Norse Venture running on Bun!');
