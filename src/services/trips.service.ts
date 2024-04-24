@@ -9,7 +9,10 @@ import { db } from '@/drizzle/db';
 import { trip_partecipants, trips } from '@/drizzle/schema';
 import { ImageProvider } from '@/models';
 import { CreateTripSchemaType } from '@/validators';
-import { DeleteObjectCommand } from '@aws-sdk/client-s3';
+import {
+  DeleteObjectCommand,
+  DeleteObjectCommandInput,
+} from '@aws-sdk/client-s3';
 import { InferInsertModel, InferSelectModel, and, eq } from 'drizzle-orm';
 import { HTTPException } from 'hono/http-exception';
 
@@ -111,9 +114,9 @@ export const deleteTrip = async (
       .then((res) => {
         deletedTrip = res[0];
       }),
-    removeTripThumbnail(trip_id),
   ];
 
+  await removeTripThumbnail(trip_id);
   await Promise.all(promises);
 
   if (!deletedTrip) {
@@ -203,9 +206,9 @@ const getTripThumbnail = async (tripId: string): Promise<string> => {
 };
 
 const removeTripThumbnail = async (tripId: string): Promise<void> => {
-  const bucketParams = {
+  const bucketParams: DeleteObjectCommandInput = {
     Bucket: Bun.env.BUCKET_NAME!,
-    Key: `trip-${tripId}-thumbnail`,
+    Key: `trip_thumbnails/trip-${tripId}-thumbnail`,
   };
 
   const command = new DeleteObjectCommand(bucketParams);
