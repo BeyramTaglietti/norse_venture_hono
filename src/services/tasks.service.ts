@@ -108,7 +108,7 @@ export const putTask = async (
     .where(and(eq(tasks.id, taskId), eq(tasks.trip_id, tripId)))
     .returning();
 
-  return updatedTask;
+  return updatedTask[0];
 };
 
 export const deleteTask = async (
@@ -149,5 +149,5 @@ export const deleteTask = async (
     .where(and(eq(tasks.id, taskId), eq(tasks.trip_id, tripId)))
     .returning();
 
-  return deletedTask;
+  return deletedTask[0];
 };
