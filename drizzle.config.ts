@@ -1,8 +1,9 @@
 import type { Config } from 'drizzle-kit';
+
 export default {
-  driver: 'pg',
   out: './src/drizzle/migrations',
   schema: './src/drizzle/schema.ts',
+  dialect: 'postgresql',
   dbCredentials: {
     host: process.env.POSTGRES_NAME!,
     port: 5432,

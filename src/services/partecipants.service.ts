@@ -1,29 +1,28 @@
-import { HttpStatus } from '@/config/errors';
-import { db } from '@/drizzle/db';
-import { trip_partecipants, trips, users } from '@/drizzle/schema';
-import { and, eq } from 'drizzle-orm';
-import { HTTPException } from 'hono/http-exception';
+import { HttpError, HttpStatus } from '@/config/errors';
+import { PartecipantModel, SafeUserModel } from '@/models';
+import {
+  addTripPartecipant_db,
+  findFriendById_db,
+  findTripByOwnerId_db,
+  findTripByPartecipant_db,
+  findTripPartecipants_db,
+  removeTripPartecipant_db,
+} from '@/repositories';
 
-export const getPartecipants = async (tripId: string, userId: string) => {
-  const tripFound = await db.query.trips.findFirst({
-    where: eq(trips.id, tripId),
-    with: {
-      partecipants: {
-        with: {
-          user: true,
-        },
-      },
-    },
-  });
+export const getPartecipants = async (
+  tripId: string,
+  userId: string,
+): Promise<SafeUserModel[]> => {
+  const tripFound = await findTripPartecipants_db(tripId);
 
   if (!tripFound) {
-    throw new HTTPException(HttpStatus.NOT_FOUND, {
+    throw new HttpError(HttpStatus.NOT_FOUND, {
       message: 'Trip not found',
     });
   }
 
   if (!tripFound.partecipants.find((x) => x.user_id === userId)) {
-    throw new HTTPException(HttpStatus.FORBIDDEN, {
+    throw new HttpError(HttpStatus.FORBIDDEN, {
       message: 'User not partecipant of this trip',
     });
   }
@@ -35,90 +34,78 @@ export const addPartecipant = async (
   tripId: string,
   userId: string,
   partecipantId: string,
-) => {
-  const tripFound = await db.query.trips.findFirst({
-    where: and(eq(trips.id, tripId), eq(trips.owner_id, userId)),
-    with: {
-      partecipants: true,
-    },
+): Promise<PartecipantModel> => {
+  const tripFound = await findTripByOwnerId_db(tripId, userId, {
+    withPartecipants: true,
   });
 
   if (!tripFound) {
-    throw new HTTPException(HttpStatus.NOT_FOUND, {
+    throw new HttpError(HttpStatus.NOT_FOUND, {
       message: 'Trip not found',
     });
   }
 
   if (tripFound.partecipants.find((x) => x.user_id === partecipantId)) {
-    throw new HTTPException(HttpStatus.FORBIDDEN, {
+    throw new HttpError(HttpStatus.FORBIDDEN, {
       message: 'User already partecipant of this trip',
     });
   }
 
-  const user = await db.query.users.findFirst({
-    where: eq(users.id, userId),
-    with: {
-      friends: true,
-    },
-  });
+  const user = await findFriendById_db(userId, partecipantId);
 
-  if (!user?.friends.find((x) => x.friend_id === partecipantId))
-    throw new HTTPException(HttpStatus.FORBIDDEN, {
+  if (!user)
+    throw new HttpError(HttpStatus.FORBIDDEN, {
       message: 'Can only add friends to trip',
     });
 
-  const addedPartecipant = await db
-    .insert(trip_partecipants)
-    .values({
-      trip_id: tripId,
-      user_id: partecipantId,
-    })
-    .returning();
+  try {
+    const addedPartecipant = await addTripPartecipant_db(tripId, partecipantId);
 
-  return addedPartecipant[0];
+    return addedPartecipant;
+  } catch {
+    throw new HttpError(HttpStatus.INTERNAL_SERVER_ERROR, {
+      message: 'Error adding partecipant',
+    });
+  }
 };
 
 export const removePartecipant = async (
   tripId: string,
   userId: string,
   partecipantId: string,
-) => {
-  const tripFound = await db.query.trips.findFirst({
-    where: and(eq(trips.id, tripId)),
-    with: {
-      partecipants: true,
-    },
-  });
+): Promise<PartecipantModel> => {
+  const tripFound = await findTripByPartecipant_db(tripId, partecipantId);
 
-  if (!tripFound || !tripFound.partecipants.find((x) => x.user_id === userId)) {
-    throw new HTTPException(HttpStatus.NOT_FOUND, {
+  if (!tripFound) {
+    throw new HttpError(HttpStatus.NOT_FOUND, {
       message: 'Trip not found',
     });
   }
 
-  if (tripFound.owner_id !== userId) {
+  if (tripFound.trip.owner_id !== userId) {
     if (partecipantId !== userId) {
-      throw new HTTPException(HttpStatus.FORBIDDEN, {
+      throw new HttpError(HttpStatus.FORBIDDEN, {
         message: 'Cannot remove other partecipants',
       });
     }
   }
 
-  if (partecipantId === tripFound.owner_id) {
-    throw new HTTPException(HttpStatus.FORBIDDEN, {
+  if (partecipantId === tripFound.trip.owner_id) {
+    throw new HttpError(HttpStatus.FORBIDDEN, {
       message: 'Cannot remove owner, delete trip instead',
     });
   }
 
-  const removedPartecipant = await db
-    .delete(trip_partecipants)
-    .where(
-      and(
-        eq(trip_partecipants.trip_id, tripId),
-        eq(trip_partecipants.user_id, partecipantId),
-      ),
-    )
-    .returning();
+  try {
+    const removedPartecipant = await removeTripPartecipant_db(
+      tripId,
+      partecipantId,
+    );
 
-  return removedPartecipant[0];
+    return removedPartecipant;
+  } catch {
+    throw new HttpError(HttpStatus.INTERNAL_SERVER_ERROR, {
+      message: 'Error removing partecipant',
+    });
+  }
 };

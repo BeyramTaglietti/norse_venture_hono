@@ -1,44 +1,30 @@
-import { HttpStatus } from '@/config/errors';
+import { HttpError, HttpStatus } from '@/config/errors';
 import { resizeThumbnail, uploadToS3 } from '@/config/s3';
-import { db } from '@/drizzle/db';
-import { users } from '@/drizzle/schema';
-import { SafeUser } from '@/models';
-import { eq, ilike } from 'drizzle-orm';
-import { HTTPException } from 'hono/http-exception';
+import { SafeUserModel } from '@/models';
+import {
+  deleteUser_db,
+  findUserByEqualUsername_db,
+  findUserById_db,
+  findUserByLikeUsername_db,
+  updateUser_db,
+} from '@/repositories';
 
 export const getUsersByUsername = async (
   username: string,
   userId: string,
-): Promise<SafeUser[]> => {
-  const usersFound = await db.query.users.findMany({
-    where: ilike(users.username, `%${username}%`),
-    columns: {
-      id: true,
-      email: true,
-      created_at: true,
-      profile_picture: true,
-      username: true,
-    },
-    limit: 20,
-  });
+): Promise<SafeUserModel[]> => {
+  const usersFound = await findUserByLikeUsername_db(userId, username);
 
   return usersFound.filter((user) => user.id !== userId);
 };
 
-export const getCurrentUser = async (userId: string): Promise<SafeUser> => {
-  const user = await db.query.users.findFirst({
-    where: eq(users.id, userId),
-    columns: {
-      id: true,
-      email: true,
-      created_at: true,
-      profile_picture: true,
-      username: true,
-    },
-  });
+export const getCurrentUser = async (
+  userId: string,
+): Promise<SafeUserModel> => {
+  const user = await findUserById_db(userId);
 
   if (!user)
-    throw new HTTPException(HttpStatus.NOT_FOUND, {
+    throw new HttpError(HttpStatus.NOT_FOUND, {
       message: 'User not found',
     });
 
@@ -48,45 +34,34 @@ export const getCurrentUser = async (userId: string): Promise<SafeUser> => {
 export const setUsername = async (
   username: string,
   userId: string,
-): Promise<SafeUser> => {
-  const updatedUser = await db
-    .update(users)
-    .set({
-      username,
-    })
-    .where(eq(users.id, userId))
-    .returning({
-      id: users.id,
-      email: users.email,
-      created_at: users.created_at,
-      profile_picture: users.profile_picture,
-      username: users.username,
-    });
+): Promise<SafeUserModel> => {
+  try {
+    const updatedUser = await updateUser_db(userId, { username });
 
-  return updatedUser[0];
+    return updatedUser;
+  } catch {
+    throw new HttpError(HttpStatus.INTERNAL_SERVER_ERROR, {
+      message: 'Error updating username',
+    });
+  }
 };
 
 export const usernameAvailable = async (username: string): Promise<boolean> => {
-  const user = await db.query.users.findFirst({
-    where: eq(users.username, username),
-  });
+  const user = await findUserByEqualUsername_db(username);
 
   return !user;
 };
 
-export const deleteAccount = async (userId: string): Promise<SafeUser> => {
-  const deletedUser = await db
-    .delete(users)
-    .where(eq(users.id, userId))
-    .returning({
-      id: users.id,
-      email: users.email,
-      created_at: users.created_at,
-      profile_picture: users.profile_picture,
-      username: users.username,
-    });
+export const deleteAccount = async (userId: string): Promise<SafeUserModel> => {
+  try {
+    const deletedUser = await deleteUser_db(userId);
 
-  return deletedUser[0];
+    return deletedUser;
+  } catch {
+    throw new HttpError(HttpStatus.INTERNAL_SERVER_ERROR, {
+      message: 'Error deleting user',
+    });
+  }
 };
 
 export const setProfilePicture = async (
@@ -104,10 +79,13 @@ export const setProfilePicture = async (
     isPublic: true,
   });
 
-  await db
-    .update(users)
-    .set({ profile_picture: thumbnailUrl })
-    .where(eq(users.id, userId));
+  try {
+    await updateUser_db(userId, { profile_picture: thumbnailUrl });
 
-  return thumbnailUrl;
+    return thumbnailUrl;
+  } catch {
+    throw new HttpError(HttpStatus.INTERNAL_SERVER_ERROR, {
+      message: 'Error while updating profile picture',
+    });
+  }
 };

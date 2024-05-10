@@ -1,33 +1,30 @@
-import { HttpStatus } from '@/config/errors';
+import { HttpError, HttpStatus } from '@/config/errors';
 import {
   getSignedImageUrl,
   resizeThumbnail,
   s3Client,
   uploadToS3,
 } from '@/config/s3';
-import { db } from '@/drizzle/db';
-import { trip_partecipants, trips } from '@/drizzle/schema';
-import { ImageProvider } from '@/models';
+import { ImageProvider, TripModel, TripWitPartecipantsModel } from '@/models';
+import {
+  addTripPartecipant_db,
+  createTrip_db,
+  deleteTrip_db,
+  findTripByOwnerId_db,
+  findTripByPartecipant_db,
+  findTripsWithPartecipants_db,
+  updateTrip_db,
+} from '@/repositories';
 import { CreateTripSchemaType } from '@/validators';
 import {
   DeleteObjectCommand,
   DeleteObjectCommandInput,
 } from '@aws-sdk/client-s3';
-import { InferInsertModel, InferSelectModel, and, eq } from 'drizzle-orm';
-import { HTTPException } from 'hono/http-exception';
 
-export const getTrips = async (user_id: string) => {
-  const foundTrips = await db.query.trip_partecipants.findMany({
-    with: {
-      trip: {
-        with: {
-          partecipants: true,
-        },
-      },
-    },
-    where: eq(trip_partecipants.user_id, user_id),
-  });
-
+export const getTrips = async (
+  user_id: string,
+): Promise<TripWitPartecipantsModel[]> => {
+  const foundTrips = await findTripsWithPartecipants_db(user_id);
   const trips = await Promise.all(
     foundTrips.map(async (x) => {
       const trip = x.trip;
@@ -46,19 +43,11 @@ export const getTrips = async (user_id: string) => {
 export const getTrip = async (
   trip_id: string,
   user_id: string,
-): Promise<InferSelectModel<typeof trips>> => {
-  const foundTrip = await db.query.trip_partecipants.findFirst({
-    where: and(
-      eq(trip_partecipants.trip_id, trip_id),
-      eq(trip_partecipants.user_id, user_id),
-    ),
-    with: {
-      trip: true,
-    },
-  });
+): Promise<TripModel> => {
+  const foundTrip = await findTripByPartecipant_db(trip_id, user_id);
 
   if (!foundTrip) {
-    throw new HTTPException(HttpStatus.NOT_FOUND, {
+    throw new HttpError(HttpStatus.NOT_FOUND, {
       message: 'Trip not found',
     });
   }
@@ -73,109 +62,104 @@ export const getTrip = async (
 export const createTrip = async (
   trip: CreateTripSchemaType,
   user_id: string,
-) => {
-  const tripToCreate: InferInsertModel<typeof trips> = {
+): Promise<TripWitPartecipantsModel> => {
+  const tripToCreate = {
     ...trip,
     owner_id: user_id,
   };
 
-  const createdTrip = await db.insert(trips).values(tripToCreate).returning();
-  const firstPartecipants = await db
-    .insert(trip_partecipants)
-    .values({
-      trip_id: createdTrip[0].id,
+  try {
+    const createdTrip = await createTrip_db(tripToCreate);
+    const firstPartecipant = await addTripPartecipant_db(
+      createdTrip.id,
       user_id,
-    })
-    .returning();
-  return { ...createdTrip[0], partecipants: [firstPartecipants[0]] };
+    );
+
+    return { ...createdTrip, partecipants: [firstPartecipant] };
+  } catch {
+    throw new HttpError(HttpStatus.INTERNAL_SERVER_ERROR, {
+      message: 'Error while creating trip',
+    });
+  }
 };
 
 export const deleteTrip = async (
   trip_id: string,
-  user_id: string,
-): Promise<InferSelectModel<typeof trips>> => {
-  const foundTrip = await db.query.trips.findFirst({
-    where: and(eq(trips.id, trip_id), eq(trips.owner_id, user_id)),
-  });
+  owner_id: string,
+): Promise<TripModel> => {
+  try {
+    const deletedTrip = await deleteTrip_db(trip_id, owner_id);
 
-  if (!foundTrip) {
-    throw new HTTPException(HttpStatus.NOT_FOUND, {
-      message: 'Trip not found',
-    });
-  }
+    if (deletedTrip.background_provider === ImageProvider.S3)
+      await removeTripThumbnail(trip_id);
 
-  let deletedTrip: InferSelectModel<typeof trips> | null = null;
-
-  const promises = [
-    db
-      .delete(trips)
-      .where(eq(trips.id, trip_id))
-      .returning()
-      .then((res) => {
-        deletedTrip = res[0];
-      }),
-  ];
-
-  await removeTripThumbnail(trip_id);
-  await Promise.all(promises);
-
-  if (!deletedTrip) {
-    throw new HTTPException(HttpStatus.INTERNAL_SERVER_ERROR, {
+    return deletedTrip;
+  } catch {
+    throw new HttpError(HttpStatus.INTERNAL_SERVER_ERROR, {
       message: 'Error while deleting trip',
     });
   }
-
-  return deletedTrip;
 };
 
 export const editTrip = async (
   tripId: string,
   trip: CreateTripSchemaType,
-  userId: string,
-) => {
-  const foundTrip = await db.query.trips.findFirst({
-    where: and(eq(trips.id, tripId), eq(trips.owner_id, userId)),
-  });
+  ownerId: string,
+): Promise<TripModel> => {
+  const foundTrip = await findTripByOwnerId_db(tripId, ownerId);
 
   if (!foundTrip) {
-    throw new HTTPException(HttpStatus.NOT_FOUND, {
+    throw new HttpError(HttpStatus.NOT_FOUND, {
       message: 'Trip not found',
     });
   }
 
-  if (trip.background) {
-    if (foundTrip.background_provider === ImageProvider.S3) {
-      await removeTripThumbnail(tripId);
-      trip.background_provider = ImageProvider.EXTERNAL_SERVICE;
+  try {
+    const promises = [];
+
+    if (trip.background) {
+      if (foundTrip.background_provider === ImageProvider.S3) {
+        promises.push(removeTripThumbnail(tripId));
+        trip.background_provider = ImageProvider.EXTERNAL_SERVICE;
+      }
     }
+
+    let updatedTrip: Awaited<ReturnType<typeof updateTrip_db>> | undefined;
+
+    promises.push(
+      updateTrip_db(tripId, ownerId, {
+        ...trip,
+        background_provider: trip.background_provider
+          ? trip.background_provider
+          : foundTrip.background_provider,
+        background: trip.background ? trip.background : foundTrip.background,
+      }).then((x) => (updatedTrip = x)),
+    );
+
+    await Promise.all(promises);
+
+    if (!updatedTrip)
+      throw new HttpError(HttpStatus.INTERNAL_SERVER_ERROR, {
+        message: 'Error while updating trip',
+      });
+
+    return updatedTrip;
+  } catch {
+    throw new HttpError(HttpStatus.INTERNAL_SERVER_ERROR, {
+      message: 'Error while updating trip',
+    });
   }
-
-  const updatedTrip = await db
-    .update(trips)
-    .set({
-      ...trip,
-      background_provider: trip.background_provider
-        ? trip.background_provider
-        : foundTrip.background_provider,
-      background: trip.background ? trip.background : foundTrip.background,
-    })
-    .where(eq(trips.id, tripId))
-    .returning();
-
-  return updatedTrip[0];
 };
 
 export const updateThumbnail = async (
   tripId: string,
-  userId: string,
+  ownerId: string,
   thumbnail: File,
 ): Promise<string> => {
-  const trip = await db.query.trips.findFirst({
-    where: and(eq(trips.id, tripId), eq(trips.owner_id, userId)),
-  });
+  const trip = await findTripByOwnerId_db(tripId, ownerId);
 
   if (!trip) {
-    throw new HTTPException(HttpStatus.NOT_FOUND, {
+    throw new HttpError(HttpStatus.NOT_FOUND, {
       message: 'Trip not found',
     });
   }
@@ -190,15 +174,18 @@ export const updateThumbnail = async (
     resizedImage,
   });
 
-  await db
-    .update(trips)
-    .set({
+  try {
+    await updateTrip_db(tripId, ownerId, {
       background: thumbnailUrl,
       background_provider: ImageProvider.S3,
-    })
-    .where(eq(trips.id, tripId));
+    });
 
-  return getTripThumbnail(tripId);
+    return getTripThumbnail(tripId);
+  } catch {
+    throw new HttpError(HttpStatus.INTERNAL_SERVER_ERROR, {
+      message: 'Error while updating trip thumbnail',
+    });
+  }
 };
 
 const getTripThumbnail = async (tripId: string): Promise<string> => {
@@ -216,7 +203,7 @@ const removeTripThumbnail = async (tripId: string): Promise<void> => {
   const s3DeleteResult = await s3Client.send(command);
 
   if (s3DeleteResult.$metadata.httpStatusCode !== HttpStatus.NO_CONTENT) {
-    throw new HTTPException(HttpStatus.INTERNAL_SERVER_ERROR, {
+    throw new HttpError(HttpStatus.INTERNAL_SERVER_ERROR, {
       message: 'Error while deleting trip thumbnail',
     });
   }

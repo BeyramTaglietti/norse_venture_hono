@@ -1,265 +1,130 @@
-import { HttpStatus } from '@/config/errors';
-import { db } from '@/drizzle/db';
-import { friend_requests, friends, users } from '@/drizzle/schema';
-import { SafeUser } from '@/models';
-import { InferInsertModel, and, eq, or } from 'drizzle-orm';
-import { HTTPException } from 'hono/http-exception';
+import { HttpError, HttpStatus } from '@/config/errors';
+import { FriendRequestModel, SafeUserModel } from '@/models';
+import {
+  addFriendRequest_db,
+  addFriend_db,
+  deleteFriendRequest_db,
+  deleteFriend_db,
+  findFriendById_db,
+  findFriendRequest_db,
+  findFriendRequests_db,
+  findFriends_db,
+} from '@/repositories';
 
-export const getFriends = async (userId: string): Promise<SafeUser[]> => {
-  const foundUser = await db.query.users.findFirst({
-    where: eq(users.id, userId),
+export const getFriends = async (userId: string): Promise<SafeUserModel[]> => {
+  const foundFriends = await findFriends_db(userId);
 
-    with: {
-      friends: {
-        with: {
-          friend: {
-            columns: {
-              id: true,
-              email: true,
-              created_at: true,
-              profile_picture: true,
-              username: true,
-            },
-          },
-        },
-      },
-    },
-  });
-
-  if (!foundUser)
-    throw new HTTPException(HttpStatus.NOT_FOUND, {
-      message: 'User not found',
-    });
-
-  return foundUser.friends.map((friend) => friend.friend);
+  return foundFriends;
 };
 
 export const deleteFriend = async (
   userId: string,
   friendId: string,
-): Promise<SafeUser> => {
-  const friendToDelete = await db.query.friends.findFirst({
-    where: and(eq(friends.user_id, userId), eq(friends.friend_id, friendId)),
-    with: {
-      friend: {
-        columns: {
-          id: true,
-          email: true,
-          created_at: true,
-          profile_picture: true,
-          username: true,
-        },
-      },
-    },
-  });
+): Promise<SafeUserModel> => {
+  const friendToDelete = await findFriendById_db(userId, friendId);
 
   if (!friendToDelete)
-    throw new HTTPException(HttpStatus.NOT_FOUND, {
+    throw new HttpError(HttpStatus.NOT_FOUND, {
       message: 'Friend not found',
     });
 
-  const promises = [];
+  try {
+    const promises = [];
 
-  promises.push(
-    db
-      .delete(friends)
-      .where(and(eq(friends.user_id, userId), eq(friends.friend_id, friendId))),
-  );
+    promises.push(
+      deleteFriend_db(userId, friendId),
+      deleteFriend_db(friendId, userId),
+    );
 
-  promises.push(
-    db
-      .delete(friends)
-      .where(and(eq(friends.user_id, friendId), eq(friends.friend_id, userId))),
-  );
+    await Promise.all(promises);
 
-  await Promise.all(promises);
-
-  return friendToDelete.friend;
+    return friendToDelete.friend;
+  } catch {
+    throw new HttpError(HttpStatus.INTERNAL_SERVER_ERROR, {
+      message: 'Error deleting friend',
+    });
+  }
 };
 
 export const getFriendRequests = async (
   userId: string,
   type: 'sent' | 'received',
-): Promise<SafeUser[]> => {
-  const whereClause =
-    type === 'sent'
-      ? eq(friend_requests.sender_id, userId)
-      : eq(friend_requests.receiver_id, userId);
-
-  const friendRequestsFound = await db.query.friend_requests.findMany({
-    where: whereClause,
-    with: {
-      sender: {
-        columns: {
-          id: true,
-          email: true,
-          created_at: true,
-          profile_picture: true,
-          username: true,
-        },
-      },
-      receiver: {
-        columns: {
-          id: true,
-          email: true,
-          created_at: true,
-          profile_picture: true,
-          username: true,
-        },
-      },
-    },
-  });
-
-  return friendRequestsFound.map((request) =>
-    type === 'sent' ? request.receiver : request.sender,
-  );
+): Promise<SafeUserModel[]> => {
+  return findFriendRequests_db(userId, type);
 };
 
 export const addFriendRequest = async (
   userId: string,
   friendId: string,
-): Promise<InferInsertModel<typeof friend_requests>> => {
+): Promise<FriendRequestModel> => {
   if (userId === friendId)
-    throw new HTTPException(HttpStatus.BAD_REQUEST, {
+    throw new HttpError(HttpStatus.BAD_REQUEST, {
       message: 'You cannot add yourself as a friend',
     });
 
-  const foundUser = await db.query.users.findFirst({
-    where: eq(users.id, friendId),
-    with: {
-      friends: true,
-      friend_requests: true,
-    },
-  });
+  const foundUser = await findFriendById_db(userId, friendId);
 
-  const friendRequest = await db.query.friend_requests.findFirst({
-    where: or(
-      and(
-        eq(friend_requests.sender_id, userId),
-        eq(friend_requests.receiver_id, friendId),
-      ),
-      and(
-        eq(friend_requests.sender_id, friendId),
-        eq(friend_requests.receiver_id, userId),
-      ),
-    ),
-  });
-
-  if (!foundUser)
-    throw new HTTPException(HttpStatus.NOT_FOUND, {
-      message: 'Friend not found',
-    });
-
-  if (foundUser.friends.find((x) => x.friend_id === userId))
-    throw new HTTPException(HttpStatus.BAD_REQUEST, {
+  if (foundUser)
+    throw new HttpError(HttpStatus.BAD_REQUEST, {
       message: 'User is already a friend',
     });
 
-  if (friendRequest)
-    throw new HTTPException(HttpStatus.BAD_REQUEST, {
-      message: 'Friend request already created',
+  try {
+    const addedFriend = await addFriendRequest_db(userId, friendId);
+    return addedFriend;
+  } catch (e) {
+    throw new HttpError(HttpStatus.INTERNAL_SERVER_ERROR, {
+      message: 'Failed to add friend request',
     });
-
-  const requestSent = await db
-    .insert(friend_requests)
-    .values({
-      sender_id: userId,
-      receiver_id: friendId,
-    })
-    .returning();
-
-  return requestSent[0];
+  }
 };
 
 export const acceptFriendRequest = async (
   userId: string,
   friendId: string,
-): Promise<SafeUser> => {
-  const friendRequest = await db.query.friend_requests.findFirst({
-    where: and(
-      eq(friend_requests.sender_id, friendId),
-      eq(friend_requests.receiver_id, userId),
-    ),
-    with: {
-      sender: {
-        columns: {
-          id: true,
-          email: true,
-          created_at: true,
-          profile_picture: true,
-          username: true,
-        },
-      },
-    },
-  });
+): Promise<SafeUserModel> => {
+  const friendRequest = await findFriendRequest_db(friendId, userId);
 
   if (!friendRequest)
-    throw new HTTPException(HttpStatus.NOT_FOUND, {
+    throw new HttpError(HttpStatus.NOT_FOUND, {
       message: 'Friend request not found',
     });
 
-  const promises = [];
+  try {
+    const promises = [
+      deleteFriendRequest_db(friendId, userId),
+      addFriend_db(userId, friendId),
+      addFriend_db(friendId, userId),
+    ];
 
-  promises.push(
-    db
-      .delete(friend_requests)
-      .where(
-        and(
-          eq(friend_requests.sender_id, friendId),
-          eq(friend_requests.receiver_id, userId),
-        ),
-      ),
-    db.insert(friends).values({
-      user_id: userId,
-      friend_id: friendId,
-    }),
-    db.insert(friends).values({
-      user_id: friendId,
-      friend_id: userId,
-    }),
-  );
+    await Promise.all(promises);
 
-  await Promise.all(promises);
-
-  return friendRequest.sender;
+    return friendRequest.sender;
+  } catch {
+    throw new HttpError(HttpStatus.INTERNAL_SERVER_ERROR, {
+      message: 'Error accepting friend request',
+    });
+  }
 };
 
 export const denyFriendRequest = async (
   userId: string,
   friendId: string,
-): Promise<SafeUser> => {
-  const friendRequest = await db.query.friend_requests.findFirst({
-    where: and(
-      eq(friend_requests.sender_id, friendId),
-      eq(friend_requests.receiver_id, userId),
-    ),
-    with: {
-      sender: {
-        columns: {
-          id: true,
-          email: true,
-          created_at: true,
-          profile_picture: true,
-          username: true,
-        },
-      },
-    },
-  });
+): Promise<SafeUserModel> => {
+  const friendRequest = await findFriendRequest_db(friendId, userId);
 
   if (!friendRequest)
-    throw new HTTPException(HttpStatus.NOT_FOUND, {
+    throw new HttpError(HttpStatus.NOT_FOUND, {
       message: 'Friend request not found',
     });
 
-  await db
-    .delete(friend_requests)
-    .where(
-      and(
-        eq(friend_requests.sender_id, friendId),
-        eq(friend_requests.receiver_id, userId),
-      ),
-    )
-    .returning();
+  try {
+    await deleteFriendRequest_db(friendId, userId);
 
-  return friendRequest.sender;
+    return friendRequest.sender;
+  } catch {
+    throw new HttpError(HttpStatus.INTERNAL_SERVER_ERROR, {
+      message: 'Error denying friend request',
+    });
+  }
 };

@@ -22,7 +22,7 @@ export const getAppStats = async () => {
       .then((x) => (usersCount = x[0].count)),
   ];
 
-  await Promise.allSettled(promises);
+  await Promise.all(promises);
 
   return {
     trips_created: tripsCreated,

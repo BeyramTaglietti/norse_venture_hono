@@ -1,11 +1,14 @@
-import { HttpStatus } from '@/config/errors';
-import { db } from '@/drizzle/db';
-import { users } from '@/drizzle/schema';
+import { HttpError, HttpStatus } from '@/config/errors';
 import { verifyAppleToken } from '@/helpers';
 import { LoginResponse } from '@/models';
-import { InferSelectModel, eq } from 'drizzle-orm';
+import {
+  createUnsafeUser_db,
+  findUnsafeUserById_db,
+  findUserByEqualEmail_db,
+  findUserByEqualUsername_db,
+  updateUser_db,
+} from '@/repositories';
 import { OAuth2Client } from 'google-auth-library';
-import { HTTPException } from 'hono/http-exception';
 import { sign, verify } from 'hono/jwt';
 
 export const googleLogin = async (token: string): Promise<LoginResponse> => {
@@ -28,18 +31,18 @@ export const appleLogin = async (token: string): Promise<LoginResponse> => {
   });
 };
 
-export const refreshToken = async (currentRefreshToken: string) => {
+export const refreshToken = async (
+  currentRefreshToken: string,
+): Promise<LoginResponse> => {
   const payload = await verify(
     currentRefreshToken,
     Bun.env.JWT_REFRESH_SECRET!,
   );
 
-  const user = await db.query.users.findFirst({
-    where: eq(users.id, payload.sub),
-  });
+  const user = await findUnsafeUserById_db(payload.sub);
 
   if (!user || !user.refresh_token)
-    throw new HTTPException(HttpStatus.UNAUTHORIZED, {
+    throw new HttpError(HttpStatus.UNAUTHORIZED, {
       message: 'Invalid operation',
     });
 
@@ -49,7 +52,7 @@ export const refreshToken = async (currentRefreshToken: string) => {
   );
 
   if (!tokenIsValid)
-    throw new HTTPException(HttpStatus.UNAUTHORIZED, {
+    throw new HttpError(HttpStatus.UNAUTHORIZED, {
       message: 'Invalid token',
     });
 
@@ -61,7 +64,7 @@ export const refreshToken = async (currentRefreshToken: string) => {
   return {
     access_token,
     refresh_token,
-    user: updatedUser[0],
+    user: updatedUser,
   };
 };
 
@@ -72,9 +75,7 @@ const login = async ({
   userEmail: string;
   userPicture?: string;
 }): Promise<LoginResponse> => {
-  const userExists = await db.query.users.findFirst({
-    where: eq(users.email, userEmail),
-  });
+  const userExists = await findUserByEqualEmail_db(userEmail);
 
   if (!userExists) {
     const user = await register(userEmail, userPicture);
@@ -125,23 +126,21 @@ const login = async ({
   }
 };
 
-const register = async (
-  email: string,
-  picture?: string,
-): Promise<InferSelectModel<typeof users>> => {
-  const username = await getRandomUsername();
+const register = async (email: string, picture?: string) => {
+  try {
+    const username = await getRandomUsername();
 
-  const newUser = await db
-    .insert(users)
-    .values({
+    return createUnsafeUser_db({
       email,
       username,
       profile_picture: picture || '',
       refresh_token: '',
-    })
-    .returning();
-
-  return newUser[0];
+    });
+  } catch {
+    throw new HttpError(HttpStatus.INTERNAL_SERVER_ERROR, {
+      message: 'Error while creating user',
+    });
+  }
 };
 
 const verifyGoogleToken = async (token: string) => {
@@ -163,7 +162,7 @@ const verifyGoogleToken = async (token: string) => {
   const payload = ticket.getPayload();
 
   if (!payload)
-    throw new HTTPException(HttpStatus.INTERNAL_SERVER_ERROR, {
+    throw new HttpError(HttpStatus.INTERNAL_SERVER_ERROR, {
       message: 'Invalid token',
     });
 
@@ -173,23 +172,23 @@ const verifyGoogleToken = async (token: string) => {
 const updateRefreshToken = async (userId: string, refreshToken: string) => {
   const hashedToken = await Bun.password.hash(refreshToken);
 
-  const updatedUser = await db
-    .update(users)
-    .set({
+  try {
+    const updatedUser = await updateUser_db(userId, {
       refresh_token: hashedToken,
-    })
-    .where(eq(users.id, userId))
-    .returning();
+    });
 
-  return updatedUser;
+    return updatedUser;
+  } catch {
+    throw new HttpError(HttpStatus.INTERNAL_SERVER_ERROR, {
+      message: 'Error updating refresh token',
+    });
+  }
 };
 
 const getRandomUsername = async () => {
   const username: string = 'User' + Math.floor(Math.random() * 10000000);
 
-  const userExists = await db.query.users.findFirst({
-    where: eq(users.username, username),
-  });
+  const userExists = await findUserByEqualUsername_db(username);
 
   if (userExists) getRandomUsername();
 

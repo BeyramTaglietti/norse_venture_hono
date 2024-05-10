@@ -1,3 +1,5 @@
+import { HTTPException } from 'hono/http-exception';
+
 export enum HttpStatus {
   CONTINUE = 100,
   SWITCHING_PROTOCOLS = 101,
@@ -47,4 +49,14 @@ export enum HttpStatus {
   SERVICE_UNAVAILABLE = 503,
   GATEWAY_TIMEOUT = 504,
   HTTP_VERSION_NOT_SUPPORTED = 505,
+}
+
+export class HttpError extends HTTPException {
+  constructor(status: HttpStatus, options: { message: string }) {
+    super(status, options);
+  }
+
+  getResponse() {
+    return super.getResponse();
+  }
 }

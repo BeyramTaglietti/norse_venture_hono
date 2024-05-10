@@ -69,8 +69,8 @@ tripsRouter.patch('/:trip_id/thumbnail', async (c) => {
 
   const file = await getThumbnailFromBody(c);
 
-  const updatedTrip = await updateThumbnail(tripId, payload.sub, file);
-  return c.json(updatedTrip);
+  const updatedTripThumbnail = await updateThumbnail(tripId, payload.sub, file);
+  return c.json(updatedTripThumbnail);
 });
 
 export { tripsRouter };
