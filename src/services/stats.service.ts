@@ -1,31 +1,32 @@
-import { db } from '@/drizzle/db';
-import { tasks, trips, users } from '@/drizzle/schema';
-import { count } from 'drizzle-orm';
+import {
+  getTotalExpiredTripsNumber,
+  getTotalGroupTripsNumber,
+  getTotalTasksNumber,
+  getTotalTripsNumber,
+  getTotalUsersNumber,
+} from '@/repositories';
 
 export const getAppStats = async () => {
   let tripsCreated: number = 0,
     tasksCreated: number = 0,
-    usersCount: number = 0;
+    usersCount: number = 0,
+    groupTrips: number = 0,
+    expiredTrips: number = 0;
 
   const promises = [
-    db
-      .select({ count: count() })
-      .from(trips)
-      .then((x) => (tripsCreated = x[0].count)),
-    db
-      .select({ count: count() })
-      .from(tasks)
-      .then((x) => (tasksCreated = x[0].count)),
-    db
-      .select({ count: count() })
-      .from(users)
-      .then((x) => (usersCount = x[0].count)),
+    getTotalTripsNumber().then((x) => (tripsCreated = x)),
+    getTotalTasksNumber().then((x) => (tasksCreated = x)),
+    getTotalUsersNumber().then((x) => (usersCount = x)),
+    getTotalGroupTripsNumber().then((x) => (groupTrips = x)),
+    getTotalExpiredTripsNumber().then((x) => (expiredTrips = x)),
   ];
 
   await Promise.all(promises);
 
   return {
     trips_created: tripsCreated,
+    group_trips: groupTrips,
+    expired_trips: expiredTrips,
     tasks_created: tasksCreated,
     number_of_users: usersCount,
   };
