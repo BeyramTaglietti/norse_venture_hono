@@ -73,15 +73,15 @@ export const getImages = async (
 };
 
 export const triggerDownload = async (url: string) => {
-  const res = await fetch(
-    url +
-      new URLSearchParams({
-        client_id: Bun.env.UNSPLASH_ACCESS_KEY!,
-      }),
-    {
-      method: 'POST',
-    },
-  );
+  const requestUrl =
+    `${url}${url.includes('?') ? '&' : '?'}` +
+    new URLSearchParams({
+      client_id: Bun.env.UNSPLASH_ACCESS_KEY!,
+    });
+
+  const res = await fetch(requestUrl, {
+    method: 'GET',
+  });
   const data = await res.json();
   return data;
 };

@@ -76,7 +76,7 @@ usersRouter.delete('/delete_account', async (c) => {
 
   await deleteAccount(payload.sub);
 
-  return c.status(HttpStatus.NO_CONTENT);
+  return c.status(HttpStatus.OK);
 });
 
 export { usersRouter };

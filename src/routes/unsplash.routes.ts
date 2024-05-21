@@ -31,7 +31,7 @@ unsplashRouter.post(
   async (c) => {
     const body = c.req.valid('json');
     await triggerDownload(body.url);
-    return c.json({ message: 'Download triggered' }, HttpStatus.NO_CONTENT);
+    return c.json({ message: 'Download triggered' }, HttpStatus.OK);
   },
 );
 
