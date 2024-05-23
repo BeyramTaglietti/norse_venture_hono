@@ -1,5 +1,6 @@
 import { Hono } from 'hono';
 import { showRoutes } from 'hono/dev';
+import { HTTPException } from 'hono/http-exception';
 import { logger } from 'hono/logger';
 import { HttpError } from './config/errors';
 import { client } from './drizzle/db';
@@ -35,7 +36,7 @@ router.get('/', (c) => {
 });
 
 router.onError((err, c) => {
-  if (err instanceof HttpError) {
+  if (err instanceof HttpError || err instanceof HTTPException) {
     return err.getResponse();
   }
 
