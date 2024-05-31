@@ -4,7 +4,7 @@ import * as schema from './schema';
 
 export const client = new Client({
   host: Bun.env.POSTGRES_NAME,
-  port: 5432,
+  port: Number(Bun.env.POSTGRES_PORT),
   user: Bun.env.POSTGRES_USER,
   password: Bun.env.POSTGRES_PASSWORD,
   database: Bun.env.POSTGRES_DB,
