@@ -36,3 +36,11 @@ UNSPLASH_ACCESS_KEY=""
 BUCKET_REGION=""
 BUCKET_NAME=""
 ```
+
+To run container
+
+```
+  docker compose up -d backend
+  docker compose exec backend bun db:migrate
+  // docker image prune -f
+```

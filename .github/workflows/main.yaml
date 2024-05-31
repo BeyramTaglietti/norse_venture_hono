@@ -17,18 +17,3 @@ jobs:
         run: docker login -u ${{ secrets.DOCKERHUB_USERNAME }} --password-stdin <<< "${{ secrets.DOCKERHUB_PASSWORD }}"
       - name: Push to DockerHub
         run: docker push ${{ secrets.DOCKERHUB_USERNAME }}/norse_venture_hono
-
-  migration_and_composeup:
-    name: db migration and compose up the backend container
-    runs-on: self-hosted
-    needs: docker_build_push
-    steps:
-      - uses: actions/checkout@v2
-      - name: pull docker image
-        run: docker pull ${{ secrets.DOCKERHUB_USERNAME }}/norse_venture_hono
-      - name: Start backend container and run migration
-        run: |
-          cd /home/ubuntu/norse_venture
-          docker compose up -d backend
-          docker compose exec backend bun db:migrate
-          docker image prune -f
