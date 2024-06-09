@@ -8,10 +8,10 @@ import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import sharp from 'sharp';
 import { HttpStatus } from './errors';
 
-const bucketRegion = process.env.BUCKET_REGION!;
-const accessKey = process.env.BUCKET_ACCESS_KEY!;
-const secretKey = process.env.BUCKET_SECRET_KEY!;
-const bucketName = process.env.BUCKET_NAME!;
+const bucketRegion = Bun.env.BUCKET_REGION!;
+const accessKey = Bun.env.BUCKET_ACCESS_KEY!;
+const secretKey = Bun.env.BUCKET_SECRET_KEY!;
+const bucketName = Bun.env.BUCKET_NAME!;
 
 export const s3Client = new S3Client({
   credentials: {
