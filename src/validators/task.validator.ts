@@ -4,7 +4,15 @@ export const createTaskSchema = z.object({
   title: z.string().min(1),
   description: z.string().optional(),
   date: z.coerce.date().optional(),
-  price: z.number().optional(),
+  price: z
+    .number()
+    .refine(
+      (n) => {
+        return n.toString().split('.')[1].length <= 2;
+      },
+      { message: 'Max precision is 2 decimal places' },
+    )
+    .optional(),
 });
 
 export const updateTaskSchema = createTaskSchema.extend({
