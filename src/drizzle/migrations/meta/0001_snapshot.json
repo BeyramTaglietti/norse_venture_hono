@@ -1,4 +1,6 @@
 {
+  "id": "7a4d34ee-a181-4605-9d3a-1668b3c5cd9d",
+  "prevId": "af933aee-dd13-4601-8f8a-8c34cf3c4be3",
   "version": "6",
   "dialect": "postgresql",
   "tables": {
@@ -24,26 +26,37 @@
         "friend_requests_sender_id_users_id_fk": {
           "name": "friend_requests_sender_id_users_id_fk",
           "tableFrom": "friend_requests",
-          "columnsFrom": ["sender_id"],
           "tableTo": "users",
-          "columnsTo": ["id"],
-          "onUpdate": "cascade",
-          "onDelete": "cascade"
+          "columnsFrom": [
+            "sender_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "cascade"
         },
         "friend_requests_receiver_id_users_id_fk": {
           "name": "friend_requests_receiver_id_users_id_fk",
           "tableFrom": "friend_requests",
-          "columnsFrom": ["receiver_id"],
           "tableTo": "users",
-          "columnsTo": ["id"],
-          "onUpdate": "cascade",
-          "onDelete": "cascade"
+          "columnsFrom": [
+            "receiver_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "cascade"
         }
       },
       "compositePrimaryKeys": {
         "friend_requests_sender_id_receiver_id_pk": {
           "name": "friend_requests_sender_id_receiver_id_pk",
-          "columns": ["sender_id", "receiver_id"]
+          "columns": [
+            "sender_id",
+            "receiver_id"
+          ]
         }
       },
       "uniqueConstraints": {}
@@ -70,26 +83,37 @@
         "friends_user_id_users_id_fk": {
           "name": "friends_user_id_users_id_fk",
           "tableFrom": "friends",
-          "columnsFrom": ["user_id"],
           "tableTo": "users",
-          "columnsTo": ["id"],
-          "onUpdate": "cascade",
-          "onDelete": "cascade"
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "cascade"
         },
         "friends_friend_id_users_id_fk": {
           "name": "friends_friend_id_users_id_fk",
           "tableFrom": "friends",
-          "columnsFrom": ["friend_id"],
           "tableTo": "users",
-          "columnsTo": ["id"],
-          "onUpdate": "cascade",
-          "onDelete": "cascade"
+          "columnsFrom": [
+            "friend_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "cascade"
         }
       },
       "compositePrimaryKeys": {
         "friends_user_id_friend_id_pk": {
           "name": "friends_user_id_friend_id_pk",
-          "columns": ["user_id", "friend_id"]
+          "columns": [
+            "user_id",
+            "friend_id"
+          ]
         }
       },
       "uniqueConstraints": {}
@@ -155,11 +179,15 @@
         "tasks_trip_id_trips_id_fk": {
           "name": "tasks_trip_id_trips_id_fk",
           "tableFrom": "tasks",
-          "columnsFrom": ["trip_id"],
           "tableTo": "trips",
-          "columnsTo": ["id"],
-          "onUpdate": "cascade",
-          "onDelete": "cascade"
+          "columnsFrom": [
+            "trip_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "cascade"
         }
       },
       "compositePrimaryKeys": {},
@@ -187,26 +215,37 @@
         "trip_partecipants_user_id_users_id_fk": {
           "name": "trip_partecipants_user_id_users_id_fk",
           "tableFrom": "trip_partecipants",
-          "columnsFrom": ["user_id"],
           "tableTo": "users",
-          "columnsTo": ["id"],
-          "onUpdate": "cascade",
-          "onDelete": "cascade"
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "cascade"
         },
         "trip_partecipants_trip_id_trips_id_fk": {
           "name": "trip_partecipants_trip_id_trips_id_fk",
           "tableFrom": "trip_partecipants",
-          "columnsFrom": ["trip_id"],
           "tableTo": "trips",
-          "columnsTo": ["id"],
-          "onUpdate": "cascade",
-          "onDelete": "cascade"
+          "columnsFrom": [
+            "trip_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "cascade"
         }
       },
       "compositePrimaryKeys": {
         "trip_partecipants_trip_id_user_id_pk": {
           "name": "trip_partecipants_trip_id_user_id_pk",
-          "columns": ["trip_id", "user_id"]
+          "columns": [
+            "trip_id",
+            "user_id"
+          ]
         }
       },
       "uniqueConstraints": {}
@@ -265,11 +304,15 @@
         "trips_owner_id_users_id_fk": {
           "name": "trips_owner_id_users_id_fk",
           "tableFrom": "trips",
-          "columnsFrom": ["owner_id"],
           "tableTo": "users",
-          "columnsTo": ["id"],
-          "onUpdate": "cascade",
-          "onDelete": "cascade"
+          "columnsFrom": [
+            "owner_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "cascade"
         }
       },
       "compositePrimaryKeys": {},
@@ -321,12 +364,16 @@
       "indexes": {
         "User_email_key": {
           "name": "User_email_key",
-          "columns": ["email"],
+          "columns": [
+            "email"
+          ],
           "isUnique": true
         },
         "User_username_key": {
           "name": "User_username_key",
-          "columns": ["username"],
+          "columns": [
+            "username"
+          ],
           "isUnique": true
         }
       },
@@ -338,10 +385,8 @@
   "enums": {},
   "schemas": {},
   "_meta": {
+    "columns": {},
     "schemas": {},
-    "tables": {},
-    "columns": {}
-  },
-  "id": "af933aee-dd13-4601-8f8a-8c34cf3c4be3",
-  "prevId": "00000000-0000-0000-0000-000000000000"
+    "tables": {}
+  }
 }

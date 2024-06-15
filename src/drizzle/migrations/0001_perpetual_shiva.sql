@@ -1,0 +1,1 @@
+ALTER TABLE "tasks" ALTER COLUMN "price" SET DATA TYPE double precision;
