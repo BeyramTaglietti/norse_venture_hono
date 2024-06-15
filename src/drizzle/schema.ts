@@ -1,7 +1,7 @@
 import { relations } from 'drizzle-orm';
 import {
   boolean,
-  integer,
+  doublePrecision,
   pgTable,
   primaryKey,
   text,
@@ -91,7 +91,7 @@ export const tasks = pgTable('tasks', {
   trip_id: uuid('trip_id')
     .notNull()
     .references(() => trips.id, { onDelete: 'cascade', onUpdate: 'cascade' }),
-  price: integer('price'),
+  price: doublePrecision('price'),
 });
 
 export const tasksRelations = relations(tasks, ({ one }) => ({

@@ -1,10 +1,10 @@
 {
-  "id": "af933aee-dd13-4601-8f8a-8c34cf3c4be3",
+  "id": "d17b034a-3d92-48d7-ba7e-cac64a42e04e",
   "prevId": "00000000-0000-0000-0000-000000000000",
-  "version": "5",
-  "dialect": "pg",
+  "version": "6",
+  "dialect": "postgresql",
   "tables": {
-    "friend_requests": {
+    "public.friend_requests": {
       "name": "friend_requests",
       "schema": "",
       "columns": {
@@ -61,7 +61,7 @@
       },
       "uniqueConstraints": {}
     },
-    "friends": {
+    "public.friends": {
       "name": "friends",
       "schema": "",
       "columns": {
@@ -118,7 +118,7 @@
       },
       "uniqueConstraints": {}
     },
-    "tasks": {
+    "public.tasks": {
       "name": "tasks",
       "schema": "",
       "columns": {
@@ -169,7 +169,7 @@
         },
         "price": {
           "name": "price",
-          "type": "integer",
+          "type": "double precision",
           "primaryKey": false,
           "notNull": false
         }
@@ -193,7 +193,7 @@
       "compositePrimaryKeys": {},
       "uniqueConstraints": {}
     },
-    "trip_partecipants": {
+    "public.trip_partecipants": {
       "name": "trip_partecipants",
       "schema": "",
       "columns": {
@@ -250,7 +250,7 @@
       },
       "uniqueConstraints": {}
     },
-    "trips": {
+    "public.trips": {
       "name": "trips",
       "schema": "",
       "columns": {
@@ -318,7 +318,7 @@
       "compositePrimaryKeys": {},
       "uniqueConstraints": {}
     },
-    "users": {
+    "public.users": {
       "name": "users",
       "schema": "",
       "columns": {
