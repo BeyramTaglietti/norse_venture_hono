@@ -3,15 +3,11 @@ import { z } from 'zod';
 export const createTaskSchema = z.object({
   title: z.string().min(1),
   description: z.string().optional(),
-  date: z.coerce.date().optional(),
+  date: z.coerce.date(),
   price: z
     .number()
-    .refine(
-      (n) => {
-        return n.toString().split('.')[1].length <= 2;
-      },
-      { message: 'Max precision is 2 decimal places' },
-    )
+    .transform((value) => parseFloat(value.toFixed(2)))
+    .pipe(z.number().optional())
     .optional(),
 });
 
