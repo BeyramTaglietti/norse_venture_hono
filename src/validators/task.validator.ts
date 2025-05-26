@@ -6,9 +6,12 @@ export const createTaskSchema = z.object({
   date: z.coerce.date(),
   price: z
     .number()
-    .transform((value) => parseFloat(value.toFixed(2)))
+    .transform((value) => {
+      return parseFloat(value.toFixed(2));
+    })
     .pipe(z.number().optional())
-    .optional(),
+    .optional()
+    .nullable(),
 });
 
 export const updateTaskSchema = createTaskSchema.extend({
