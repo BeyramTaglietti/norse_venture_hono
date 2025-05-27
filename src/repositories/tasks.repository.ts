@@ -5,6 +5,7 @@ import { InferInsertModel, and, eq } from 'drizzle-orm';
 export const findTripTasks_db = (tripId: string) => {
   return db.query.tasks.findMany({
     where: eq(tasks.trip_id, tripId),
+    orderBy: (tasks, { asc }) => [asc(tasks.created_at)],
   });
 };
 
