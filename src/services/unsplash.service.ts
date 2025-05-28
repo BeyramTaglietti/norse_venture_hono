@@ -13,9 +13,7 @@ export const getImages = async (
           page: '1',
           client_id: Bun.env.UNSPLASH_ACCESS_KEY!,
         }),
-      {
-        method: 'GET',
-      },
+      { method: 'GET' },
     );
     const data = await res.json();
 
@@ -30,16 +28,10 @@ export const getImages = async (
           user: {
             username: image.user.username,
             name: image.user.name,
-            profile_image: {
-              small: image.user.profile_image.small,
-            },
-            links: {
-              html: image.user.links.html,
-            },
+            profile_image: { small: image.user.profile_image.small },
+            links: { html: image.user.links.html },
           },
-          links: {
-            download_location: image.links.download_location,
-          },
+          links: { download_location: image.links.download_location },
         };
       });
     else
@@ -53,19 +45,13 @@ export const getImages = async (
           user: {
             username: image.user.username,
             name: image.user.name,
-            profile_image: {
-              small: image.user.profile_image.small,
-            },
-            links: {
-              html: image.user.links.html,
-            },
+            profile_image: { small: image.user.profile_image.small },
+            links: { html: image.user.links.html },
           },
-          links: {
-            download_location: image.links.download_location,
-          },
+          links: { download_location: image.links.download_location },
         };
       });
-  } catch (err) {
+  } catch {
     throw new HttpError(HttpStatus.INTERNAL_SERVER_ERROR, {
       message: 'Could not fetch unplash images',
     });
@@ -75,13 +61,9 @@ export const getImages = async (
 export const triggerDownload = async (url: string) => {
   const requestUrl =
     `${url}${url.includes('?') ? '&' : '?'}` +
-    new URLSearchParams({
-      client_id: Bun.env.UNSPLASH_ACCESS_KEY!,
-    });
+    new URLSearchParams({ client_id: Bun.env.UNSPLASH_ACCESS_KEY! });
 
-  const res = await fetch(requestUrl, {
-    method: 'GET',
-  });
+  const res = await fetch(requestUrl, { method: 'GET' });
   const data = await res.json();
   return data;
 };

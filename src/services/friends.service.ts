@@ -24,9 +24,7 @@ export const deleteFriend = async (
   const friendToDelete = await findFriendById_db(userId, friendId);
 
   if (!friendToDelete)
-    throw new HttpError(HttpStatus.NOT_FOUND, {
-      message: 'Friend not found',
-    });
+    throw new HttpError(HttpStatus.NOT_FOUND, { message: 'Friend not found' });
 
   try {
     const promises = [];
@@ -72,7 +70,7 @@ export const addFriendRequest = async (
   try {
     const addedFriend = await addFriendRequest_db(userId, friendId);
     return addedFriend;
-  } catch (e) {
+  } catch {
     throw new HttpError(HttpStatus.INTERNAL_SERVER_ERROR, {
       message: 'Failed to add friend request',
     });
