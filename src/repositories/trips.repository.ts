@@ -1,6 +1,6 @@
 import { db } from '@/drizzle/db';
 import { trip_partecipants, trips } from '@/drizzle/schema';
-import { InferInsertModel, and, eq } from 'drizzle-orm';
+import { type InferInsertModel, and, eq } from 'drizzle-orm';
 
 export const findTripsWithPartecipants_db = (partecipantId: string) => {
   return db.query.trip_partecipants.findMany({

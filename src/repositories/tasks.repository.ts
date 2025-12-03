@@ -1,6 +1,6 @@
 import { db } from '@/drizzle/db';
 import { tasks } from '@/drizzle/schema';
-import { InferInsertModel, and, eq } from 'drizzle-orm';
+import { type InferInsertModel, and, eq } from 'drizzle-orm';
 
 export const findTripTasks_db = (tripId: string) => {
   return db.query.tasks.findMany({

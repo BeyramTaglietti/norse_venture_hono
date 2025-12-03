@@ -1,6 +1,6 @@
-import { HttpError, HttpStatus } from '@/config/errors';
+import { HttpStatus } from '@/config/errors';
 import { resizeThumbnail, uploadToS3 } from '@/config/s3';
-import { SafeUserModel } from '@/models';
+import type { SafeUserModel } from '@/models';
 import {
   deleteUser_db,
   findUserByEqualUsername_db,
@@ -8,6 +8,7 @@ import {
   findUserByLikeUsername_db,
   updateUser_db,
 } from '@/repositories';
+import { HTTPException } from 'hono/http-exception';
 
 export const getUsersByUsername = async (
   username: string,
@@ -24,7 +25,7 @@ export const getCurrentUser = async (
   const user = await findUserById_db(userId);
 
   if (!user)
-    throw new HttpError(HttpStatus.NOT_FOUND, {
+    throw new HTTPException(HttpStatus.NOT_FOUND, {
       message: 'User not found',
     });
 
@@ -40,7 +41,7 @@ export const setUsername = async (
 
     return updatedUser;
   } catch {
-    throw new HttpError(HttpStatus.INTERNAL_SERVER_ERROR, {
+    throw new HTTPException(HttpStatus.INTERNAL_SERVER_ERROR, {
       message: 'Error updating username',
     });
   }
@@ -58,7 +59,7 @@ export const deleteAccount = async (userId: string): Promise<SafeUserModel> => {
 
     return deletedUser;
   } catch {
-    throw new HttpError(HttpStatus.INTERNAL_SERVER_ERROR, {
+    throw new HTTPException(HttpStatus.INTERNAL_SERVER_ERROR, {
       message: 'Error deleting user',
     });
   }
@@ -84,7 +85,7 @@ export const setProfilePicture = async (
 
     return thumbnailUrl;
   } catch {
-    throw new HttpError(HttpStatus.INTERNAL_SERVER_ERROR, {
+    throw new HTTPException(HttpStatus.INTERNAL_SERVER_ERROR, {
       message: 'Error while updating profile picture',
     });
   }

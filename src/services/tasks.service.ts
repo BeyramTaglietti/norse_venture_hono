@@ -1,5 +1,5 @@
-import { HttpError, HttpStatus } from '@/config/errors';
-import { TaskModel } from '@/models';
+import { HttpStatus } from '@/config/errors';
+import type { TaskModel } from '@/models';
 import {
   createTask_db,
   deleteTask_db,
@@ -7,7 +7,8 @@ import {
   findTripTasks_db,
   updateTask_db,
 } from '@/repositories';
-import { CreateTaskSchemaType, UpdateTaskSchemaType } from '@/validators';
+import type { CreateTaskSchemaType, UpdateTaskSchemaType } from '@/validators';
+import { HTTPException } from 'hono/http-exception';
 
 export const getTasks = async (
   tripId: string,
@@ -16,7 +17,7 @@ export const getTasks = async (
   const tripFound = await findTripByPartecipant_db(tripId, userId);
 
   if (!tripFound) {
-    throw new HttpError(HttpStatus.NOT_FOUND, {
+    throw new HTTPException(HttpStatus.NOT_FOUND, {
       message: 'Trip not found',
     });
   }
@@ -34,7 +35,7 @@ export const createTask = async (
   const tripFound = await findTripByPartecipant_db(tripId, userId);
 
   if (!tripFound) {
-    throw new HttpError(HttpStatus.NOT_FOUND, {
+    throw new HTTPException(HttpStatus.NOT_FOUND, {
       message: 'Trip not found',
     });
   }
@@ -49,7 +50,7 @@ export const createTask = async (
 
     return newTask;
   } catch {
-    throw new HttpError(HttpStatus.INTERNAL_SERVER_ERROR, {
+    throw new HTTPException(HttpStatus.INTERNAL_SERVER_ERROR, {
       message: 'Task not created',
     });
   }
@@ -64,7 +65,7 @@ export const putTask = async (
   const tripFound = await findTripByPartecipant_db(tripId, userId);
 
   if (!tripFound) {
-    throw new HttpError(HttpStatus.NOT_FOUND, {
+    throw new HTTPException(HttpStatus.NOT_FOUND, {
       message: 'Trip not found',
     });
   }
@@ -79,7 +80,7 @@ export const putTask = async (
 
     return updatedTask;
   } catch {
-    throw new HttpError(HttpStatus.INTERNAL_SERVER_ERROR, {
+    throw new HTTPException(HttpStatus.INTERNAL_SERVER_ERROR, {
       message: 'Task not updated',
     });
   }
@@ -93,7 +94,7 @@ export const deleteTask = async (
   const tripFound = await findTripByPartecipant_db(tripId, userId);
 
   if (!tripFound) {
-    throw new HttpError(HttpStatus.NOT_FOUND, {
+    throw new HTTPException(HttpStatus.NOT_FOUND, {
       message: 'Trip not found',
     });
   }
@@ -103,7 +104,7 @@ export const deleteTask = async (
 
     return deletedTask;
   } catch {
-    throw new HttpError(HttpStatus.INTERNAL_SERVER_ERROR, {
+    throw new HTTPException(HttpStatus.INTERNAL_SERVER_ERROR, {
       message: 'Task not deleted',
     });
   }

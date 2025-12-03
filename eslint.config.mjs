@@ -1,44 +1,22 @@
-import { FlatCompat } from '@eslint/eslintrc';
-import js from '@eslint/js';
-import typescriptEslint from '@typescript-eslint/eslint-plugin';
-import tsParser from '@typescript-eslint/parser';
-import drizzle from 'eslint-plugin-drizzle';
-import { defineConfig, globalIgnores } from 'eslint/config';
-import globals from 'globals';
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const compat = new FlatCompat({
-  baseDirectory: __dirname,
-  recommendedConfig: js.configs.recommended,
-  allConfig: js.configs.all,
-});
+import js from "@eslint/js";
+import drizzle from "eslint-plugin-drizzle";
+import { defineConfig } from "eslint/config";
+import globals from "globals";
+import tseslint from "typescript-eslint";
 
 export default defineConfig([
-  globalIgnores(['**/node_modules/', '**/build/']),
+  { ignores: ["build"] },
   {
-    extends: compat.extends(
-      'eslint:recommended',
-      'plugin:@typescript-eslint/recommended',
-      'plugin:prettier/recommended',
-      'plugin:drizzle/recommended',
-    ),
-
-    plugins: { '@typescript-eslint': typescriptEslint, drizzle },
-
+    files: ["**/*.{js,mjs,cjs,ts,mts,cts}"],
+    plugins: { js, drizzle },
+    extends: ["js/recommended"],
     languageOptions: {
-      globals: { ...globals.node },
-
-      parser: tsParser,
-      ecmaVersion: 'latest',
-      sourceType: 'module',
+      globals: globals.node,
+      parserOptions: { tsconfigRootDir: import.meta.dirname },
     },
-
     rules: {
-      'drizzle/enforce-delete-with-where': 'error',
-      'drizzle/enforce-update-with-where': 'error',
+      ...drizzle.configs.recommended.rules,
     },
   },
+  tseslint.configs.recommended,
 ]);

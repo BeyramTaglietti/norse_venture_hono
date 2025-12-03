@@ -1,6 +1,6 @@
 import { db } from '@/drizzle/db';
 import { users } from '@/drizzle/schema';
-import { InferInsertModel, eq, ilike } from 'drizzle-orm';
+import { type InferInsertModel, eq, ilike } from 'drizzle-orm';
 
 export const findUserByLikeUsername_db = (userId: string, username: string) => {
   return db.query.users.findMany({

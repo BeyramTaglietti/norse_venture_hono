@@ -1,5 +1,5 @@
-import { HttpError, HttpStatus } from '@/config/errors';
-import { FriendRequestModel, SafeUserModel } from '@/models';
+import { HttpStatus } from "@/config/errors";
+import type { FriendRequestModel, SafeUserModel } from "@/models";
 import {
   addFriendRequest_db,
   addFriend_db,
@@ -9,7 +9,8 @@ import {
   findFriendRequest_db,
   findFriendRequests_db,
   findFriends_db,
-} from '@/repositories';
+} from "@/repositories";
+import { HTTPException } from "hono/http-exception";
 
 export const getFriends = async (userId: string): Promise<SafeUserModel[]> => {
   const foundFriends = await findFriends_db(userId);
@@ -19,73 +20,75 @@ export const getFriends = async (userId: string): Promise<SafeUserModel[]> => {
 
 export const deleteFriend = async (
   userId: string,
-  friendId: string,
+  friendId: string
 ): Promise<SafeUserModel> => {
   const friendToDelete = await findFriendById_db(userId, friendId);
 
   if (!friendToDelete)
-    throw new HttpError(HttpStatus.NOT_FOUND, { message: 'Friend not found' });
+    throw new HTTPException(HttpStatus.NOT_FOUND, {
+      message: "Friend not found",
+    });
 
   try {
     const promises = [];
 
     promises.push(
       deleteFriend_db(userId, friendId),
-      deleteFriend_db(friendId, userId),
+      deleteFriend_db(friendId, userId)
     );
 
     await Promise.all(promises);
 
     return friendToDelete.friend;
   } catch {
-    throw new HttpError(HttpStatus.INTERNAL_SERVER_ERROR, {
-      message: 'Error deleting friend',
+    throw new HTTPException(HttpStatus.INTERNAL_SERVER_ERROR, {
+      message: "Error deleting friend",
     });
   }
 };
 
 export const getFriendRequests = async (
   userId: string,
-  type: 'sent' | 'received',
+  type: "sent" | "received"
 ): Promise<SafeUserModel[]> => {
   return findFriendRequests_db(userId, type);
 };
 
 export const addFriendRequest = async (
   userId: string,
-  friendId: string,
+  friendId: string
 ): Promise<FriendRequestModel> => {
   if (userId === friendId)
-    throw new HttpError(HttpStatus.BAD_REQUEST, {
-      message: 'You cannot add yourself as a friend',
+    throw new HTTPException(HttpStatus.BAD_REQUEST, {
+      message: "You cannot add yourself as a friend",
     });
 
   const foundUser = await findFriendById_db(userId, friendId);
 
   if (foundUser)
-    throw new HttpError(HttpStatus.BAD_REQUEST, {
-      message: 'User is already a friend',
+    throw new HTTPException(HttpStatus.BAD_REQUEST, {
+      message: "User is already a friend",
     });
 
   try {
     const addedFriend = await addFriendRequest_db(userId, friendId);
     return addedFriend;
   } catch {
-    throw new HttpError(HttpStatus.INTERNAL_SERVER_ERROR, {
-      message: 'Failed to add friend request',
+    throw new HTTPException(HttpStatus.INTERNAL_SERVER_ERROR, {
+      message: "Failed to add friend request",
     });
   }
 };
 
 export const acceptFriendRequest = async (
   userId: string,
-  friendId: string,
+  friendId: string
 ): Promise<SafeUserModel> => {
   const friendRequest = await findFriendRequest_db(friendId, userId);
 
   if (!friendRequest)
-    throw new HttpError(HttpStatus.NOT_FOUND, {
-      message: 'Friend request not found',
+    throw new HTTPException(HttpStatus.NOT_FOUND, {
+      message: "Friend request not found",
     });
 
   try {
@@ -99,21 +102,21 @@ export const acceptFriendRequest = async (
 
     return friendRequest.sender;
   } catch {
-    throw new HttpError(HttpStatus.INTERNAL_SERVER_ERROR, {
-      message: 'Error accepting friend request',
+    throw new HTTPException(HttpStatus.INTERNAL_SERVER_ERROR, {
+      message: "Error accepting friend request",
     });
   }
 };
 
 export const denyFriendRequest = async (
   userId: string,
-  friendId: string,
+  friendId: string
 ): Promise<SafeUserModel> => {
   const friendRequest = await findFriendRequest_db(friendId, userId);
 
   if (!friendRequest)
-    throw new HttpError(HttpStatus.NOT_FOUND, {
-      message: 'Friend request not found',
+    throw new HTTPException(HttpStatus.NOT_FOUND, {
+      message: "Friend request not found",
     });
 
   try {
@@ -121,8 +124,8 @@ export const denyFriendRequest = async (
 
     return friendRequest.sender;
   } catch {
-    throw new HttpError(HttpStatus.INTERNAL_SERVER_ERROR, {
-      message: 'Error denying friend request',
+    throw new HTTPException(HttpStatus.INTERNAL_SERVER_ERROR, {
+      message: "Error denying friend request",
     });
   }
 };

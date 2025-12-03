@@ -1,5 +1,6 @@
-import { HttpError, HttpStatus } from '@/config/errors';
-import { keywordUnsplashImages, randomUnsplashImages } from '@/models';
+import { HttpStatus } from '@/config/errors';
+import type { keywordUnsplashImages, randomUnsplashImages } from '@/models';
+import { HTTPException } from 'hono/http-exception';
 
 export const getImages = async (
   keyword: string,
@@ -52,7 +53,7 @@ export const getImages = async (
         };
       });
   } catch {
-    throw new HttpError(HttpStatus.INTERNAL_SERVER_ERROR, {
+    throw new HTTPException(HttpStatus.INTERNAL_SERVER_ERROR, {
       message: 'Could not fetch unplash images',
     });
   }

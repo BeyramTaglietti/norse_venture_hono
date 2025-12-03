@@ -1,11 +1,15 @@
-import { HttpError, HttpStatus } from '@/config/errors';
+import { HttpStatus } from '@/config/errors';
 import {
   getSignedImageUrl,
   resizeThumbnail,
   s3Client,
   uploadToS3,
 } from '@/config/s3';
-import { ImageProvider, TripModel, TripWitPartecipantsModel } from '@/models';
+import {
+  ImageProvider,
+  type TripModel,
+  type TripWitPartecipantsModel,
+} from '@/models';
 import {
   addTripPartecipant_db,
   createTrip_db,
@@ -15,11 +19,12 @@ import {
   findTripsWithPartecipants_db,
   updateTrip_db,
 } from '@/repositories';
-import { CreateTripSchemaType } from '@/validators';
+import type { CreateTripSchemaType } from '@/validators';
 import {
   DeleteObjectCommand,
-  DeleteObjectCommandInput,
+  type DeleteObjectCommandInput,
 } from '@aws-sdk/client-s3';
+import { HTTPException } from 'hono/http-exception';
 
 export const getTrips = async (
   user_id: string,
@@ -47,7 +52,7 @@ export const getTrip = async (
   const foundTrip = await findTripByPartecipant_db(trip_id, user_id);
 
   if (!foundTrip) {
-    throw new HttpError(HttpStatus.NOT_FOUND, {
+    throw new HTTPException(HttpStatus.NOT_FOUND, {
       message: 'Trip not found',
     });
   }
@@ -77,7 +82,7 @@ export const createTrip = async (
 
     return { ...createdTrip, partecipants: [firstPartecipant] };
   } catch {
-    throw new HttpError(HttpStatus.INTERNAL_SERVER_ERROR, {
+    throw new HTTPException(HttpStatus.INTERNAL_SERVER_ERROR, {
       message: 'Error while creating trip',
     });
   }
@@ -95,7 +100,7 @@ export const deleteTrip = async (
 
     return deletedTrip;
   } catch {
-    throw new HttpError(HttpStatus.INTERNAL_SERVER_ERROR, {
+    throw new HTTPException(HttpStatus.INTERNAL_SERVER_ERROR, {
       message: 'Error while deleting trip',
     });
   }
@@ -109,7 +114,7 @@ export const editTrip = async (
   const foundTrip = await findTripByOwnerId_db(tripId, ownerId);
 
   if (!foundTrip) {
-    throw new HttpError(HttpStatus.NOT_FOUND, {
+    throw new HTTPException(HttpStatus.NOT_FOUND, {
       message: 'Trip not found',
     });
   }
@@ -139,13 +144,13 @@ export const editTrip = async (
     await Promise.all(promises);
 
     if (!updatedTrip)
-      throw new HttpError(HttpStatus.INTERNAL_SERVER_ERROR, {
+      throw new HTTPException(HttpStatus.INTERNAL_SERVER_ERROR, {
         message: 'Error while updating trip',
       });
 
     return updatedTrip;
   } catch {
-    throw new HttpError(HttpStatus.INTERNAL_SERVER_ERROR, {
+    throw new HTTPException(HttpStatus.INTERNAL_SERVER_ERROR, {
       message: 'Error while updating trip',
     });
   }
@@ -159,7 +164,7 @@ export const updateThumbnail = async (
   const trip = await findTripByOwnerId_db(tripId, ownerId);
 
   if (!trip) {
-    throw new HttpError(HttpStatus.NOT_FOUND, {
+    throw new HTTPException(HttpStatus.NOT_FOUND, {
       message: 'Trip not found',
     });
   }
@@ -182,7 +187,7 @@ export const updateThumbnail = async (
 
     return getTripThumbnail(tripId);
   } catch {
-    throw new HttpError(HttpStatus.INTERNAL_SERVER_ERROR, {
+    throw new HTTPException(HttpStatus.INTERNAL_SERVER_ERROR, {
       message: 'Error while updating trip thumbnail',
     });
   }
@@ -203,7 +208,7 @@ const removeTripThumbnail = async (tripId: string): Promise<void> => {
   const s3DeleteResult = await s3Client.send(command);
 
   if (s3DeleteResult.$metadata.httpStatusCode !== HttpStatus.NO_CONTENT) {
-    throw new HttpError(HttpStatus.INTERNAL_SERVER_ERROR, {
+    throw new HTTPException(HttpStatus.INTERNAL_SERVER_ERROR, {
       message: 'Error while deleting trip thumbnail',
     });
   }

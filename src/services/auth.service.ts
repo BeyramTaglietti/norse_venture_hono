@@ -1,6 +1,6 @@
-import { HttpError, HttpStatus } from '@/config/errors';
+import { HttpStatus } from '@/config/errors';
 import { verifyAppleToken } from '@/helpers';
-import { LoginResponse } from '@/models';
+import type { LoginResponse } from '@/models';
 import {
   createUnsafeUser_db,
   findUnsafeUserById_db,
@@ -9,6 +9,7 @@ import {
   updateUser_db,
 } from '@/repositories';
 import { OAuth2Client } from 'google-auth-library';
+import { HTTPException } from 'hono/http-exception';
 import { sign, verify } from 'hono/jwt';
 
 export const googleLogin = async (token: string): Promise<LoginResponse> => {
@@ -39,10 +40,16 @@ export const refreshToken = async (
     Bun.env.JWT_REFRESH_SECRET!,
   );
 
+  if (typeof payload.sub !== 'string') {
+    throw new HTTPException(HttpStatus.UNAUTHORIZED, {
+      message: 'Invalid token payload',
+    });
+  }
+
   const user = await findUnsafeUserById_db(payload.sub);
 
   if (!user || !user.refresh_token)
-    throw new HttpError(HttpStatus.UNAUTHORIZED, {
+    throw new HTTPException(HttpStatus.UNAUTHORIZED, {
       message: 'Invalid operation',
     });
 
@@ -52,7 +59,7 @@ export const refreshToken = async (
   );
 
   if (!tokenIsValid)
-    throw new HttpError(HttpStatus.UNAUTHORIZED, {
+    throw new HTTPException(HttpStatus.UNAUTHORIZED, {
       message: 'Invalid token',
     });
 
@@ -137,7 +144,7 @@ const register = async (email: string, picture?: string) => {
       refresh_token: '',
     });
   } catch {
-    throw new HttpError(HttpStatus.INTERNAL_SERVER_ERROR, {
+    throw new HTTPException(HttpStatus.INTERNAL_SERVER_ERROR, {
       message: 'Error while creating user',
     });
   }
@@ -162,7 +169,7 @@ const verifyGoogleToken = async (token: string) => {
   const payload = ticket.getPayload();
 
   if (!payload)
-    throw new HttpError(HttpStatus.INTERNAL_SERVER_ERROR, {
+    throw new HTTPException(HttpStatus.INTERNAL_SERVER_ERROR, {
       message: 'Invalid token',
     });
 
@@ -179,7 +186,7 @@ const updateRefreshToken = async (userId: string, refreshToken: string) => {
 
     return updatedUser;
   } catch {
-    throw new HttpError(HttpStatus.INTERNAL_SERVER_ERROR, {
+    throw new HTTPException(HttpStatus.INTERNAL_SERVER_ERROR, {
       message: 'Error updating refresh token',
     });
   }
